@@ -334,14 +334,31 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
 end)
 
 -- Beim Verlassen des Servers auch aus playerFFAState entfernen
+-- Spieler beim Verlassen des Servers aus Lobbys und FFA entfernen
 AddEventHandler('esx:playerDropped', function(playerId, reason)
-    -- ... (existierender Code für Lobby-Austritt) ...
-    if playerLobbyMap[playerId] then
-        local mapId = playerLobbyMap[playerId]
-        DebugPrint("Spieler war in Lobby für Map: " .. mapId .. ". Wird aus Lobby entfernt.")
-        TriggerEvent('ffa:leaveLobby', mapId, playerId)
-    end
--- (Die UnregisterPlayerFromFFA Zeile war hier doppelt und wurde in den esx:playerDropped Block oben integriert)
+    local currentMapId = playerLobbyMap[playerId]
 
+    DebugPrint("Spieler (ID: " .. playerId .. ") hat Server verlassen. Grund: " .. reason .. ". Map-ID aus Lobby: " .. tostring(currentMapId))
+
+    if currentMapId then
+        local lobby = activeLobbies[currentMapId]
+        if lobby and lobby.players[playerId] then
+            lobby.players[playerId] = nil
+            lobby.playerCount = lobby.playerCount - 1
+
+            local mapDisplayName = lobby.mapDetails.displayName
+            DebugPrint("Spieler (ID: " .. playerId .. ") aus Lobby für Map '" .. mapDisplayName .. "' entfernt (Disconnect). Spieler in Lobby: " .. lobby.playerCount)
+
+            if lobby.playerCount == 0 then
+                DebugPrint("Lobby für Map '" .. mapDisplayName .. "' (ID: " .. currentMapId .. ") ist leer und wird nach Disconnect aufgelöst.")
+                activeLobbies[currentMapId] = nil
+            end
+            TriggerClientEvent('ffa:updateLobbyView', -1, currentMapId, lobby and lobby.players or {}, lobby and lobby.playerCount or 0)
+        end
+        playerLobbyMap[playerId] = nil
+    end
+
+    UnregisterPlayerFromFFA(playerId)
+end)
 
 DebugPrint("FFA Script Server-Seite geladen und Lobby-System, Loadout-Funktion sowie Respawn-System initialisiert.")
