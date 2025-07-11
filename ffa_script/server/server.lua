@@ -231,25 +231,37 @@ function GivePlayerMapLoadout(playerId, mapId)
         return
     end
 
-    -- Alle aktuellen Waffen entfernen
-    xPlayer.removeAllWeapons()
-    DebugPrint("Loadout: Alle Waffen von Spieler " .. xPlayer.getName() .. " (ID: " .. playerId .. ") entfernt.")
+    local playerPed = GetPlayerPed(playerId)
+    if not playerPed or playerPed == 0 then
+        DebugPrint("Loadout: Konnte Ped für Spieler " .. playerId .. " nicht bekommen. Waffen können nicht geändert werden.")
+        if xPlayer then
+            xPlayer.showNotification("Fehler: Spieler-Entität nicht gefunden für Waffen-Loadout.")
+        end
+        return
+    end
 
-    -- Definierte Waffen geben
+    -- Alle aktuellen Waffen entfernen (native Methode)
+    RemoveAllPedWeapons(playerPed, true) -- true, um auch Munition zu entfernen
+    DebugPrint("Loadout: Alle Waffen von Spieler " .. playerId .. " (Ped: " .. playerPed .. ") entfernt via Native.")
+
+    -- Definierte Waffen geben (native Methode)
     for _, weaponData in ipairs(mapConfig.weapons) do
         if weaponData.hash and weaponData.ammo then
-            xPlayer.addWeapon(weaponData.hash, weaponData.ammo)
-            DebugPrint("Loadout: Spieler " .. xPlayer.getName() .. " erhielt Waffe " .. weaponData.hash .. " mit " .. weaponData.ammo .. " Munition.")
+            local weaponHashKey = GetHashKey(weaponData.hash) -- Sicherstellen, dass es ein Hash-Key ist
+            GiveWeaponToPed(playerPed, weaponHashKey, weaponData.ammo, false, true)
+            DebugPrint("Loadout: Spieler " .. playerId .. " (Ped: " .. playerPed .. ") erhielt Waffe " .. weaponData.hash .. " (Hash: " .. weaponHashKey .. ") mit " .. weaponData.ammo .. " Munition via Native.")
         else
             DebugPrint("Loadout: Ungültige Waffendaten für MapID " .. mapId .. ": Hash=" .. tostring(weaponData.hash) .. ", Ammo=" .. tostring(weaponData.ammo))
         end
     end
 
     -- Standard-Komponenten oder spezifische Komponenten könnten hier auch hinzugefügt werden
-    -- xPlayer.addWeaponComponent('WEAPON_PISTOL', GetComponentHash('COMPONENT_AT_PI_FLSH'))
+    -- GiveWeaponComponentToPed(playerPed, GetHashKey('WEAPON_PISTOL'), GetHashKey('COMPONENT_AT_PI_FLSH'))
 
-    xPlayer.showNotification("Du hast das Waffen-Loadout für '" .. mapConfig.displayName .. "' erhalten.")
-    DebugPrint("Loadout: Waffen-Loadout für Map '" .. mapConfig.displayName .. "' an Spieler " .. xPlayer.getName() .. " (ID: " .. playerId .. ") vergeben.")
+    if xPlayer then
+        xPlayer.showNotification("Du hast das Waffen-Loadout für '" .. mapConfig.displayName .. "' erhalten.")
+    end
+    DebugPrint("Loadout: Waffen-Loadout für Map '" .. mapConfig.displayName .. "' an Spieler " .. playerId .. " (Ped: " .. playerPed .. ") vergeben via Native.")
 end
 
 -- [[
