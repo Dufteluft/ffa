@@ -1,8 +1,4 @@
-ESX = nil
-
-TriggerEvent('esx:getSharedObject', function(obj)
-    ESX = obj
-end)
+ESX = exports["es_extended"]:getSharedObject()
 
 -- Hilfsfunktion für Debug-Nachrichten auf dem Server
 local function DebugPrint(msg)
@@ -13,16 +9,13 @@ end
 
 AddEventHandler('onResourceStart', function(resourceName)
     if GetCurrentResourceName() == resourceName then
-        Wait(1000) -- Kurze Wartezeit, um sicherzustellen, dass ESX geladen ist
-        if ESX == nil then
-            TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-        end
-
+        -- ESX sollte jetzt direkt initialisiert sein, wenn es_extended vorher gestartet wurde.
+        -- Eine zusätzliche Prüfung kann nicht schaden, ist aber weniger kritisch als bei der Event-Methode.
         if ESX ~= nil then
-            DebugPrint("ESX wurde erfolgreich geladen.")
+            DebugPrint("ESX Shared Object erfolgreich geladen (via export).")
             -- Hier könnten weitere Initialisierungen für den Server stattfinden
         else
-            DebugPrint("ESX konnte NICHT geladen werden. Stelle sicher, dass es gestartet ist und die Abhängigkeit korrekt in fxmanifest.lua eingetragen ist.")
+            DebugPrint("ESX Shared Object konnte NICHT geladen werden (via export). Stelle sicher, dass es_extended gestartet ist UND exports korrekt definiert sind.")
         end
         DebugPrint("FFA Script Server-Seite gestartet.")
     end

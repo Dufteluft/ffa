@@ -1,15 +1,16 @@
-ESX = nil
+ESX = exports["es_extended"]:getSharedObject()
 local isMenuOpen = false -- Zustand der UI
 
 Citizen.CreateThread(function()
-    while ESX == nil do
-        TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-        Citizen.Wait(0)
-    end
+    -- Mit dem direkten Export-Aufruf ist die while-Schleife nicht mehr unbedingt nötig,
+    -- aber eine Prüfung, ob ESX geladen ist, bevor spielerspezifische Dinge passieren, ist gut.
+    while not ESX do Citizen.Wait(100) end -- Warte kurz, falls es_extended noch nicht ganz initialisiert ist
 
-    if ESX.IsPlayerLoaded() then
-        -- Hier könnten Initialisierungen für den Spieler stattfinden, sobald ESX geladen ist
+    while not ESX.IsPlayerLoaded() do
+        Citizen.Wait(100)
     end
+    -- Hier könnten Initialisierungen für den Spieler stattfinden, sobald ESX geladen ist
+    DebugPrint("ESX Player ist geladen.")
 end)
 
 -- Hilfsfunktion für Debug-Nachrichten auf dem Client
@@ -21,10 +22,9 @@ end
 
 -- Befehl zum Öffnen/Schließen der UI
 RegisterCommand(Config.CommandName, function(source, args, rawCommand)
-    if ESX == nil then
-        DebugPrint("ESX ist noch nicht bereit.")
-        -- Hier könnte eine Benachrichtigung für den Spieler angezeigt werden
-        ESX.ShowNotification("FFA-System ist noch nicht bereit. Bitte warte einen Moment.")
+    if not ESX or not ESX.IsPlayerLoaded() then
+        DebugPrint("ESX ist noch nicht bereit oder Spieler nicht geladen.")
+        ESX.ShowNotification("FFA-System ist noch nicht bereit oder Spielerdaten nicht geladen. Bitte warte einen Moment.")
         return
     end
 
@@ -74,7 +74,7 @@ end)
 
 -- NUI Callback für das Beitreten zu einer Lobby
 RegisterNUICallback('joinLobby', function(data, cb)
-    if data && data.mapId then
+    if data and data.mapId then -- Korrektur: && zu and
         DebugPrint("NUI Callback: joinLobby für MapID: " .. data.mapId)
         TriggerServerEvent('ffa:joinLobby', data.mapId)
         cb('ok')
