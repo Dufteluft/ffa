@@ -116,8 +116,16 @@ AddEventHandler('ffa:joinLobby', function(mapId)
     if randomSpawn and randomSpawn.x and randomSpawn.y and randomSpawn.z then
         local newX, newY, newZ = tonumber(randomSpawn.x), tonumber(randomSpawn.y), tonumber(randomSpawn.z)
         if newX and newY and newZ then
-            xPlayer.setCoords(newX, newY, newZ)
-            DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") zu Spawn (" .. newX .. "," .. newY .. "," .. newZ .. ") teleportiert und Routing Bucket auf " .. routingBucket .. " gesetzt.")
+            local playerPed = xPlayer.getPed() -- Get the player's ped
+            if playerPed and playerPed ~= 0 then
+                SetEntityCoords(playerPed, newX, newY, newZ, false, false, false, true)
+                DebugPrint("TEST: Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") direkt via SetEntityCoords zu Spawn (" .. newX .. "," .. newY .. "," .. newZ .. ") teleportiert. Routing Bucket: " .. routingBucket)
+            else
+                DebugPrint("FEHLER: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für SetEntityCoords.")
+                xPlayer.showNotification("Fehler: Spieler-Ped nicht gefunden für Teleport.")
+                TriggerEvent('ffa:leaveLobby', mapId, src)
+                return
+            end
         else
             DebugPrint("FEHLER: Konnte Koordinaten nicht in Zahlen umwandeln für Spieler " .. xPlayer.getName() .. ". x="..tostring(randomSpawn.x)..", y="..tostring(randomSpawn.y)..", z="..tostring(randomSpawn.z))
             xPlayer.showNotification("Fehler: Ungültige Spawnpunkt-Koordinaten für diese Map.")
@@ -328,8 +336,19 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
                 xPlayer.triggerEvent('esx_ambulancejob:revive', src)
                 Wait(150) -- Etwas längere Pause nach Revive, um sicherzustellen, dass der Spieler wieder "kontrollierbar" ist
 
-                xPlayer.setCoords(respawnX, respawnY, respawnZ)
-                DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") respawned bei " .. respawnX .. ", " .. respawnY .. ", " .. respawnZ)
+                local playerPedRespawn = xPlayer.getPed()
+                if playerPedRespawn and playerPedRespawn ~= 0 then
+                    SetEntityCoords(playerPedRespawn, respawnX, respawnY, respawnZ, false, false, false, true)
+                    DebugPrint("TEST: Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") direkt via SetEntityCoords respawned bei " .. respawnX .. ", " .. respawnY .. ", " .. respawnZ)
+                else
+                    DebugPrint("FEHLER beim Respawn: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für SetEntityCoords.")
+                    -- Spieler wurde wiederbelebt, aber konnte nicht teleportiert werden. Kritisch.
+                    -- Hier könnte man den Spieler aus dem FFA werfen.
+                    UnregisterPlayerFromFFA(src)
+                    TriggerClientEvent('ffa:playerLeftMatch', src)
+                    SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
+                    return
+                end
             else
                 DebugPrint("FEHLER beim Respawn: Konnte Koordinaten nicht in Zahlen umwandeln für Spieler " .. xPlayer.getName() .. ". x="..tostring(randomSpawnPoint.x)..", y="..tostring(randomSpawnPoint.y)..", z="..tostring(randomSpawnPoint.z))
                 xPlayer.showNotification("Fehler: Ungültige Respawn-Koordinaten.")
