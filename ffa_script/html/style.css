@@ -1,0 +1,159 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: transparent; /* Wichtig für NUI */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden; /* Verhindert Scrollbalken auf der Body-Ebene */
+}
+
+#ffa-container {
+    width: 500px;
+    padding: 20px;
+    background-color: rgba(50, 50, 50, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    color: white;
+    text-align: center;
+    max-height: 80vh; /* Maximale Höhe, um Scrollen innerhalb des Containers zu ermöglichen */
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+}
+
+h1 {
+    color: #ff8c00; /* Orange-ähnliche Farbe für den Titel */
+    margin: 0;
+    font-size: 1.8em;
+}
+
+.close-btn {
+    background-color: #d9534f;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    line-height: 30px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.close-btn:hover {
+    background-color: #c9302c;
+}
+
+#map-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 15px;
+    overflow-y: auto; /* Ermöglicht Scrollen, wenn viele Maps vorhanden sind */
+    flex-grow: 1;
+}
+
+.map-card {
+    background-color: #3f3f3f;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.map-card img {
+    width: 100%;
+    max-width: 150px;
+    height: auto;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    background-color: #555; /* Hintergrund für den Fall, dass das Bild nicht lädt */
+}
+
+.map-card h3 {
+    margin: 5px 0;
+    color: #ffae42;
+    font-size: 1.1em;
+}
+
+.map-card p {
+    font-size: 0.8em;
+    color: #ccc;
+    margin-bottom: 10px;
+    flex-grow: 1; /* Sorgt dafür, dass die Beschreibung den verfügbaren Platz einnimmt */
+}
+
+.map-card .players {
+    font-size: 0.9em;
+    color: #ddd;
+    margin-bottom: 10px;
+}
+
+.join-btn {
+    padding: 8px 12px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    width: 80%;
+}
+
+.join-btn:hover {
+    background-color: #4cae4c;
+}
+
+#lobby-details {
+    padding: 15px;
+    border-top: 1px solid #444;
+    margin-top: 10px;
+}
+
+#lobby-details h2 {
+    color: #ffae42;
+}
+
+#player-list {
+    min-height: 50px;
+    background-color: #333;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+#player-list p {
+    margin: 2px 0;
+    font-size: 0.9em;
+}
+
+#leaveLobbyButton {
+    background-color: #f0ad4e;
+}
+#leaveLobbyButton:hover {
+    background-color: #ec971f;
+}
+
+button { /* Allgemeiner Button-Style, falls nicht spezifischer */
+    padding: 10px 15px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px; /* Etwas weniger Margin als zuvor */
+}
