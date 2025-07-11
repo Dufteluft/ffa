@@ -9,11 +9,8 @@ end
 
 AddEventHandler('onResourceStart', function(resourceName)
     if GetCurrentResourceName() == resourceName then
-        -- ESX sollte jetzt direkt initialisiert sein, wenn es_extended vorher gestartet wurde.
-        -- Eine zusätzliche Prüfung kann nicht schaden, ist aber weniger kritisch als bei der Event-Methode.
         if ESX ~= nil then
             DebugPrint("ESX Shared Object erfolgreich geladen (via export).")
-            -- Hier könnten weitere Initialisierungen für den Server stattfinden
         else
             DebugPrint("ESX Shared Object konnte NICHT geladen werden (via export). Stelle sicher, dass es_extended gestartet ist UND exports korrekt definiert sind.")
         end
@@ -21,12 +18,9 @@ AddEventHandler('onResourceStart', function(resourceName)
     end
 end)
 
--- Hier wird später die Logik für FFA-Matches, Spieler-Synchronisation etc. implementiert
+local activeLobbies = {}
+local playerLobbyMap = {}
 
-local activeLobbies = {} -- mapId = { players = {playerId = ESXPlayerObject, ...}, mapDetails = Config.Map }
-local playerLobbyMap = {} -- playerId = mapId
-
--- Hilfsfunktion, um eine Map-Konfiguration anhand der ID zu finden
 local function getMapConfigById(mapId)
     for _, mapConfig in ipairs(Config.Maps) do
         if mapConfig.id == mapId then
@@ -36,7 +30,6 @@ local function getMapConfigById(mapId)
     return nil
 end
 
--- Event Handler für Client-Anfrage zum Beitreten einer Lobby
 RegisterNetEvent('ffa:joinLobby')
 AddEventHandler('ffa:joinLobby', function(mapId)
     local src = source
@@ -47,7 +40,6 @@ AddEventHandler('ffa:joinLobby', function(mapId)
         return
     end
 
-    -- Prüfen, ob Spieler bereits in einer Lobby ist
     if playerLobbyMap[src] then
         DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") ist bereits in Lobby: " .. playerLobbyMap[src] .. ". Verlässt alte Lobby zuerst.")
         TriggerEvent('ffa:leaveLobby', playerLobbyMap[src], src)
@@ -106,7 +98,7 @@ AddEventHandler('ffa:joinLobby', function(mapId)
     if randomSpawn and randomSpawn.x and randomSpawn.y and randomSpawn.z then
         local newX, newY, newZ = tonumber(randomSpawn.x), tonumber(randomSpawn.y), tonumber(randomSpawn.z)
         if newX and newY and newZ then
-            local playerPed = GetPlayerPed(src) -- Korrigierte Zeile
+            local playerPed = GetPlayerPed(src)
             if playerPed and playerPed ~= 0 then
                 SetEntityCoords(playerPed, newX, newY, newZ, false, false, false, true)
                 DebugPrint("TEST: Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") direkt via SetEntityCoords zu Spawn (" .. newX .. "," .. newY .. "," .. newZ .. ") teleportiert. Routing Bucket: " .. routingBucket)
@@ -131,8 +123,15 @@ AddEventHandler('ffa:joinLobby', function(mapId)
 
     GivePlayerMapLoadout(src, mapId)
     RegisterPlayerToFFA(src, mapId)
-    xPlayer.setHealth(GetPedMaxHealth(GetPlayerPed(src)))
-    xPlayer.setArmour(100)
+
+    local playerPedForHealth = GetPlayerPed(src)
+    if playerPedForHealth and playerPedForHealth ~= 0 then
+        SetEntityHealth(playerPedForHealth, GetEntityMaxHealth(playerPedForHealth))
+        SetPedArmour(playerPedForHealth, 100)
+        DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") erhielt volle Gesundheit und Rüstung via Natives.")
+    else
+        DebugPrint("FEHLER: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für Health/Armor Set.")
+    end
 
     TriggerClientEvent('ffa:playerJoinedMatch', src, mapId)
     DebugPrint("FFA-Match für Spieler " .. xPlayer.getName() .. " auf Map " .. mapConfig.displayName .. " gestartet/beigetreten.")
@@ -204,12 +203,8 @@ end)
 
 function GivePlayerMapLoadout(playerId, mapId)
     local xPlayer = ESX.GetPlayerFromId(playerId)
-    if not xPlayer then
-        DebugPrint("Loadout: Spieler " .. playerId .. " nicht gefunden.")
-        return
-    end
-
     local mapConfig = getMapConfigById(mapId)
+
     if not mapConfig or not mapConfig.weapons then
         DebugPrint("Loadout: Map-Konfiguration oder Waffen für MapID " .. mapId .. " nicht gefunden.")
         return
@@ -348,9 +343,15 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
             return
         end
 
-        xPlayer.setHealth(GetPedMaxHealth(GetPlayerPed(src)))
-        xPlayer.setArmour(100)
-        DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") erhielt volle Gesundheit und Rüstung.")
+        local playerPedForHealthAndArmor = GetPlayerPed(src)
+        if playerPedForHealthAndArmor and playerPedForHealthAndArmor ~= 0 then
+            SetEntityHealth(playerPedForHealthAndArmor, GetEntityMaxHealth(playerPedForHealthAndArmor))
+            SetPedArmour(playerPedForHealthAndArmor, 100)
+            DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") erhielt volle Gesundheit und Rüstung via Natives.")
+        else
+            DebugPrint("FEHLER: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für Health/Armor Set beim Respawn.")
+        end
+
 
         GivePlayerMapLoadout(src, mapId)
 
