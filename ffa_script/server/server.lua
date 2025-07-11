@@ -116,7 +116,7 @@ AddEventHandler('ffa:joinLobby', function(mapId)
     if randomSpawn and randomSpawn.x and randomSpawn.y and randomSpawn.z then
         local newX, newY, newZ = tonumber(randomSpawn.x), tonumber(randomSpawn.y), tonumber(randomSpawn.z)
         if newX and newY and newZ then
-            local playerPed = xPlayer.getPed() -- Get the player's ped
+            local playerPed = GetPlayerPed(src) -- Korrektur: xPlayer.getPed() zu GetPlayerPed(src)
             if playerPed and playerPed ~= 0 then
                 SetEntityCoords(playerPed, newX, newY, newZ, false, false, false, true)
                 DebugPrint("TEST: Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") direkt via SetEntityCoords zu Spawn (" .. newX .. "," .. newY .. "," .. newZ .. ") teleportiert. Routing Bucket: " .. routingBucket)
@@ -336,12 +336,12 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
                 xPlayer.triggerEvent('esx_ambulancejob:revive', src)
                 Wait(150) -- Etwas längere Pause nach Revive, um sicherzustellen, dass der Spieler wieder "kontrollierbar" ist
 
-                local playerPedRespawn = xPlayer.getPed()
+                local playerPedRespawn = GetPlayerPed(src) -- Korrektur: xPlayer.getPed() zu GetPlayerPed(src)
                 if playerPedRespawn and playerPedRespawn ~= 0 then
                     SetEntityCoords(playerPedRespawn, respawnX, respawnY, respawnZ, false, false, false, true)
                     DebugPrint("TEST: Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") direkt via SetEntityCoords respawned bei " .. respawnX .. ", " .. respawnY .. ", " .. respawnZ)
                 else
-                    DebugPrint("FEHLER beim Respawn: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für SetEntityCoords.")
+                    DebugPrint("FEHLER beim Respawn: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für SetEntityCoords (Ped ID: " .. tostring(playerPedRespawn) .. ").")
                     -- Spieler wurde wiederbelebt, aber konnte nicht teleportiert werden. Kritisch.
                     -- Hier könnte man den Spieler aus dem FFA werfen.
                     UnregisterPlayerFromFFA(src)
