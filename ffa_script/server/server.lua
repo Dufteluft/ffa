@@ -111,8 +111,25 @@ AddEventHandler('ffa:joinLobby', function(mapId)
     end
     local routingBucket = 5000 + mapIndex -- Eindeutiger Bucket pro Map, um Kollisionen zu vermeiden
     SetPlayerRoutingBucket(src, routingBucket)
-    xPlayer.setCoords(randomSpawn.x, randomSpawn.y, randomSpawn.z) -- Teleport zum Spawn
-    DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") zu Spawn teleportiert und Routing Bucket auf " .. routingBucket .. " gesetzt.")
+
+    DebugPrint("Versuche Spieler " .. xPlayer.getName() .. " zu teleportieren. randomSpawn Tabelle: " .. json.encode(randomSpawn))
+    if randomSpawn and randomSpawn.x and randomSpawn.y and randomSpawn.z then
+        local newX, newY, newZ = tonumber(randomSpawn.x), tonumber(randomSpawn.y), tonumber(randomSpawn.z)
+        if newX and newY and newZ then
+            xPlayer.setCoords(newX, newY, newZ)
+            DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") zu Spawn (" .. newX .. "," .. newY .. "," .. newZ .. ") teleportiert und Routing Bucket auf " .. routingBucket .. " gesetzt.")
+        else
+            DebugPrint("FEHLER: Konnte Koordinaten nicht in Zahlen umwandeln für Spieler " .. xPlayer.getName() .. ". x="..tostring(randomSpawn.x)..", y="..tostring(randomSpawn.y)..", z="..tostring(randomSpawn.z))
+            xPlayer.showNotification("Fehler: Ungültige Spawnpunkt-Koordinaten für diese Map.")
+            TriggerEvent('ffa:leaveLobby', mapId, src)
+            return
+        end
+    else
+        DebugPrint("FEHLER: randomSpawn oder dessen Koordinaten sind nil für Spieler " .. xPlayer.getName() .. ". randomSpawn: " .. json.encode(randomSpawn))
+        xPlayer.showNotification("Fehler: Kritischer Fehler bei Spawnpunkt-Definition.")
+        TriggerEvent('ffa:leaveLobby', mapId, src)
+        return
+    end
 
     GivePlayerMapLoadout(src, mapId) -- Waffen geben
     RegisterPlayerToFFA(src, mapId) -- Für Respawn-System und serverseitigen Status registrieren
@@ -296,20 +313,42 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
         if not mapConfig.spawnPoints or #mapConfig.spawnPoints == 0 then
             DebugPrint("FEHLER: Keine Spawnpunkte für Map " .. mapId .. " definiert! Spieler kann nicht respawned werden.")
             xPlayer.showNotification("Fehler: Für diese Map sind keine Spawnpunkte konfiguriert. Respawn nicht möglich.")
-            -- Ggf. Spieler aus FFA entfernen oder andere Maßnahme
             UnregisterPlayerFromFFA(src)
             TriggerClientEvent('ffa:playerLeftMatch', src)
-            SetPlayerRoutingBucket(src, 0)
+            SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
             return
         end
         local spawnPoints = mapConfig.spawnPoints
-        local randomSpawn = spawnPoints[math.random(1, #spawnPoints)]
+        local randomSpawnPoint = spawnPoints[math.random(1, #spawnPoints)]
 
-        xPlayer.triggerEvent('esx_ambulancejob:revive',src) -- Standard ESX Revive, um den Tod-Screen zu entfernen etc.
-        Wait(100) -- Kurze Pause, damit Revive wirken kann
+        DebugPrint("Versuche Spieler " .. xPlayer.getName() .. " zu respawnen. randomSpawnPoint Tabelle: " .. json.encode(randomSpawnPoint))
+        if randomSpawnPoint and randomSpawnPoint.x and randomSpawnPoint.y and randomSpawnPoint.z then
+            local respawnX, respawnY, respawnZ = tonumber(randomSpawnPoint.x), tonumber(randomSpawnPoint.y), tonumber(randomSpawnPoint.z)
+            if respawnX and respawnY and respawnZ then
+                xPlayer.triggerEvent('esx_ambulancejob:revive', src)
+                Wait(150) -- Etwas längere Pause nach Revive, um sicherzustellen, dass der Spieler wieder "kontrollierbar" ist
 
-        xPlayer.setCoords(randomSpawn.x, randomSpawn.y, randomSpawn.z)
-        DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") respawned bei " .. randomSpawn.x .. ", " .. randomSpawn.y .. ", " .. randomSpawn.z)
+                xPlayer.setCoords(respawnX, respawnY, respawnZ)
+                DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") respawned bei " .. respawnX .. ", " .. respawnY .. ", " .. respawnZ)
+            else
+                DebugPrint("FEHLER beim Respawn: Konnte Koordinaten nicht in Zahlen umwandeln für Spieler " .. xPlayer.getName() .. ". x="..tostring(randomSpawnPoint.x)..", y="..tostring(randomSpawnPoint.y)..", z="..tostring(randomSpawnPoint.z))
+                xPlayer.showNotification("Fehler: Ungültige Respawn-Koordinaten.")
+                -- Fallback: Spieler einfach nur wiederbeleben ohne Teleport, oder aus FFA entfernen
+                xPlayer.triggerEvent('esx_ambulancejob:revive', src)
+                UnregisterPlayerFromFFA(src)
+                TriggerClientEvent('ffa:playerLeftMatch', src)
+                SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
+                return
+            end
+        else
+            DebugPrint("FEHLER beim Respawn: randomSpawnPoint oder dessen Koordinaten sind nil für Spieler " .. xPlayer.getName() .. ". randomSpawnPoint: " .. json.encode(randomSpawnPoint))
+            xPlayer.showNotification("Fehler: Kritischer Fehler bei Respawn-Definition.")
+            xPlayer.triggerEvent('esx_ambulancejob:revive', src)
+            UnregisterPlayerFromFFA(src)
+            TriggerClientEvent('ffa:playerLeftMatch', src)
+            SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
+            return
+        end
 
         -- Volles Leben und Rüstung
         -- ESX.HealPlayer(src) -- Diese Funktion gibt es in Standard ESX nicht direkt, muss über TriggerEvent oder xPlayer Methoden
