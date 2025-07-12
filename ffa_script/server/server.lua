@@ -35,108 +35,147 @@ local function getMapConfigById(mapId)
 end
 
 local function StoreAndClearPlayerInventoryForFFA(playerId, mapWeapons)
+    DebugPrint("Store/Clear INV: Aufgerufen für Spieler " .. playerId)
     if not exports.ox_inventory then
-        DebugPrint("Store/Clear ERROR: ox_inventory Export nicht gefunden.")
+        DebugPrint("Store/Clear INV ERROR: ox_inventory Export nicht gefunden.")
         return false
     end
 
     playerOriginalInventory[playerId] = exports.ox_inventory:GetInventory(playerId)
     if playerOriginalInventory[playerId] then
-        DebugPrint("Store/Clear: Originalinventar für Spieler " .. playerId .. " gespeichert.")
+        DebugPrint("Store/Clear INV: Originalinventar für Spieler " .. playerId .. " gespeichert. Rohdaten: " .. json.encode(playerOriginalInventory[playerId]))
 
-        -- Alle Waffen aus dem Originalinventar entfernen, bevor das FFA-Loadout gegeben wird
-        local itemsToRemove = {}
-        if playerOriginalInventory[playerId].items then
+        local itemsActuallyRemoved = 0
+        -- Annahme: playerOriginalInventory[playerId].items ist eine Tabelle, bei der die Schlüssel Slot-Nummern sind
+        -- und die Werte die Item-Daten-Tabellen sind.
+        if playerOriginalInventory[playerId].items and type(playerOriginalInventory[playerId].items) == 'table' then
+            DebugPrint("Store/Clear INV: Iteriere durch Originalinventar von Spieler " .. playerId .. " zum Entfernen von Waffen...")
+
+            local weaponsToRemoveFromOriginal = {}
             for slot, itemData in pairs(playerOriginalInventory[playerId].items) do
-                -- Annahme: Waffen haben "weapon_" im Namen oder einen spezifischen Typ, falls ox_inventory das liefert
-                -- Sicherer ist es, alle Items zu entfernen, die Waffen sind.
-                -- Für diese Iteration gehen wir davon aus, dass wir alle Waffen entfernen wollen.
-                -- Man könnte hier spezifischer filtern, wenn nur bestimmte Waffen weg sollen.
-                if itemData.name and string.find(itemData.name, "weapon_") then
-                    table.insert(itemsToRemove, {name = itemData.name, amount = itemData.amount})
+                if itemData and itemData.name and string.find(itemData.name, "weapon_") then
+                    DebugPrint("Store/Clear INV: Waffe '" .. itemData.name .. "' (x" .. itemData.amount .. ") in Slot " .. slot .. " im Originalinventar gefunden zum Entfernen.")
+                    -- Wichtig: Hier die Menge (itemData.amount) speichern, da Waffen oft nur Menge 1 haben, aber andere Items nicht.
+                    table.insert(weaponsToRemoveFromOriginal, {name = itemData.name, amount = itemData.amount, slot = slot, metadata = itemData.metadata})
                 end
             end
-        end
 
-        if #itemsToRemove > 0 then
-            DebugPrint("Store/Clear: Folgende Waffen werden aus dem Originalinventar von Spieler " .. playerId .. " entfernt: " .. json.encode(itemsToRemove))
-            for _, itemToRemove in ipairs(itemsToRemove) do
-                exports.ox_inventory:RemoveItem(playerId, itemToRemove.name, itemToRemove.amount)
+            if #weaponsToRemoveFromOriginal > 0 then
+                DebugPrint("Store/Clear INV: " .. #weaponsToRemoveFromOriginal .. " Waffeneinträge werden aus dem aktiven Inventar von Spieler " .. playerId .. " entfernt.")
+                for _, weaponToRemove in ipairs(weaponsToRemoveFromOriginal) do
+                    DebugPrint("Store/Clear INV: Versuche zu entfernen: " .. json.encode(weaponToRemove))
+                    -- Hier ist es wichtig, dass RemoveItem mit den korrekten Parametern aufgerufen wird,
+                    -- insbesondere wenn Slots oder spezifische Metadaten beim Entfernen eine Rolle spielen.
+                    -- Für Waffen reicht oft Name und Menge.
+                    local success, removedCount = exports.ox_inventory:RemoveItem(playerId, weaponToRemove.name, weaponToRemove.amount, weaponToRemove.metadata, weaponToRemove.slot)
+                    if success and removedCount > 0 then
+                        itemsActuallyRemoved = itemsActuallyRemoved + removedCount
+                        DebugPrint("Store/Clear INV: Waffe " .. weaponToRemove.name .. " (x" .. weaponToRemove.amount .. ") erfolgreich aus Slot " .. weaponToRemove.slot .. " entfernt.")
+                    else
+                        DebugPrint("Store/Clear INV WARNING: Konnte Waffe " .. weaponToRemove.name .. " aus Slot " .. weaponToRemove.slot .. " nicht entfernen. Erfolg: " .. tostring(success) .. ", Anzahl: " .. tostring(removedCount))
+                    end
+                end
+                DebugPrint("Store/Clear INV: " .. itemsActuallyRemoved .. " Waffen-Stacks aus Originalinventar von Spieler " .. playerId .. " entfernt.")
+            else
+                DebugPrint("Store/Clear INV: Keine Waffen im Originalinventar von Spieler " .. playerId .. " gefunden, die 'weapon_' im Namen haben.")
             end
-            DebugPrint("Store/Clear: Waffen aus Originalinventar von Spieler " .. playerId .. " entfernt.")
         else
-            DebugPrint("Store/Clear: Keine Waffen im Originalinventar von Spieler " .. playerId .. " gefunden zum Entfernen.")
+            DebugPrint("Store/Clear INV: Originalinventar von Spieler " .. playerId .. " hat keine 'items' Tabelle oder ist keine Tabelle. Inventarstruktur: " .. json.encode(playerOriginalInventory[playerId]))
         end
     else
-        DebugPrint("Store/Clear WARNING: Konnte Originalinventar für Spieler " .. playerId .. " nicht abrufen. Inventar wird nicht geleert.")
-        -- Nicht `false` zurückgeben, da das FFA trotzdem starten kann, aber der Spieler hat evtl. noch alte Waffen.
+        DebugPrint("Store/Clear INV WARNING: Konnte Originalinventar für Spieler " .. playerId .. " nicht abrufen. Inventar wird nicht geleert.")
     end
+    DebugPrint("Store/Clear INV: Prozess für Spieler " .. playerId .. " abgeschlossen.")
     return true
 end
 
 local function RestorePlayerOriginalInventory(playerId)
+    DebugPrint("Restore INV: Aufgerufen für Spieler " .. playerId)
     if not exports.ox_inventory then
-        DebugPrint("Restore ERROR: ox_inventory Export nicht gefunden."); return
+        DebugPrint("Restore INV ERROR: ox_inventory Export nicht gefunden."); return
     end
 
     if playerOriginalInventory[playerId] then
-        DebugPrint("Restore: Versuche Originalinventar für Spieler " .. playerId .. " wiederherzustellen.")
-
-        -- Zuerst sicherstellen, dass das aktuelle Inventar (das nur FFA-Items enthalten sollte, die schon entfernt wurden) leer ist,
-        -- oder zumindest keine Konflikte verursacht. Ein ClearInventory wäre zu drastisch, wenn FFA-Items nicht 100% entfernt wurden.
-        -- Wir verlassen uns darauf, dass RemovePlayerFFALoadout seinen Job gemacht hat.
+        DebugPrint("Restore INV: Versuche Originalinventar für Spieler " .. playerId .. " wiederherzustellen. Gespeichertes Inventar: " .. json.encode(playerOriginalInventory[playerId]))
 
         local inventoryData = playerOriginalInventory[playerId]
-        local itemsToRestore = inventoryData.items or inventoryData
+        -- Annahme: inventoryData.items ist die Tabelle mit Slot als Key und ItemData als Value
+        local itemsToRestore = inventoryData.items
 
         if type(itemsToRestore) == "table" then
+            local itemCount = 0
+            for _ in pairs(itemsToRestore) do itemCount = itemCount + 1 end
+            DebugPrint("Restore INV: " .. itemCount .. " Item-Slots/Einträge im gespeicherten Inventar gefunden für Spieler " .. playerId)
+
             for slot, itemData in pairs(itemsToRestore) do
                 if type(itemData) == 'table' and itemData.name and itemData.amount then
                     local metadata = itemData.metadata or {}
+                    -- Wichtig: ox_inventory:AddItem fügt normalerweise in den nächsten freien Slot hinzu, wenn der angegebene Slot belegt ist
+                    -- oder der Slot-Parameter anders interpretiert wird. Für eine exakte Wiederherstellung wäre SetInventory ideal.
+                    DebugPrint("Restore INV: Versuche Item " .. itemData.name .. " (x" .. itemData.amount .. ") in Slot " .. tostring(itemData.slot) .. " für Spieler " .. playerId .. " wiederherzustellen. Meta: " .. json.encode(metadata))
                     local success, addedItem = exports.ox_inventory:AddItem(playerId, itemData.name, itemData.amount, metadata, itemData.slot)
                     if success and addedItem then
-                        -- DebugPrint("Restore: Item " .. itemData.name .. " (x" .. itemData.amount .. ") für Spieler " .. playerId .. " in Slot " .. tostring(itemData.slot) .. " wiederhergestellt.")
+                        DebugPrint("Restore INV: Item " .. itemData.name .. " (x" .. itemData.amount .. ") für Spieler " .. playerId .. " in Slot " .. tostring(itemData.slot) .. " (oder nächster freier) erfolgreich wiederhergestellt.")
                     else
-                        DebugPrint("Restore WARNING: Konnte Item " .. itemData.name .. " (x" .. itemData.amount .. ") für Spieler " .. playerId .. " nicht wiederherstellen. Erfolg: " .. tostring(success))
+                        DebugPrint("Restore INV WARNING: Konnte Item " .. itemData.name .. " (x" .. itemData.amount .. ") für Spieler " .. playerId .. " nicht wiederherstellen. Erfolg: " .. tostring(success) .. " ItemData: " .. json.encode(addedItem))
                     end
+                else
+                    DebugPrint("Restore INV WARNING: Ungültige Item-Daten im gespeicherten Inventar für Spieler " .. playerId .. " bei Slot/Index " .. tostring(slot) .. ": " .. json.encode(itemData))
                 end
             end
-            DebugPrint("Restore: Manueller Wiederherstellungsprozess für Spieler " .. playerId .. " abgeschlossen.")
+            DebugPrint("Restore INV: Manueller Wiederherstellungsprozess für Spieler " .. playerId .. " abgeschlossen.")
         else
-            DebugPrint("Restore ERROR: Gespeicherte Inventardaten für Spieler " .. playerId .. " haben nicht die erwartete Tabellenstruktur für Items.")
+            DebugPrint("Restore INV ERROR: Gespeicherte Inventardaten (items) für Spieler " .. playerId .. " haben nicht die erwartete Tabellenstruktur. Daten: " .. json.encode(inventoryData))
         end
         playerOriginalInventory[playerId] = nil
     else
-        DebugPrint("Restore WARNING: Kein Originalinventar für Spieler " .. playerId .. " zum Wiederherstellen gefunden.")
+        DebugPrint("Restore INV WARNING: Kein Originalinventar für Spieler " .. playerId .. " zum Wiederherstellen gefunden.")
     end
 end
 
 local function RemovePlayerFFALoadout(playerId)
+    DebugPrint("Loadout REMOVAL: Aufgerufen für Spieler " .. playerId)
     if exports.ox_inventory and playerCurrentFFALoadout[playerId] and #playerCurrentFFALoadout[playerId] > 0 then
-        DebugPrint("Loadout Removal: Versuche FFA Loadout für Spieler " .. playerId .. " zu entfernen. Loadout: " .. json.encode(playerCurrentFFALoadout[playerId]))
-        for _, weaponData in ipairs(playerCurrentFFALoadout[playerId]) do
-            local currentAmount = exports.ox_inventory:Search('count', weaponData.name, playerId)
-            DebugPrint("Loadout Removal: ox_inventory:Search('count', '"..weaponData.name.."', "..playerId..") ergab: " .. tostring(currentAmount) .. " (Typ: " .. type(currentAmount) .. ")")
+        DebugPrint("Loadout REMOVAL: Aktuell getracktes FFA Loadout für Spieler " .. playerId .. ": " .. json.encode(playerCurrentFFALoadout[playerId]))
+        local itemsActuallyRemovedOverall = 0
+        for i, weaponData in ipairs(playerCurrentFFALoadout[playerId]) do
+            if weaponData and weaponData.name then
+                DebugPrint("Loadout REMOVAL: Iteration " .. i .. ", versuche Waffe '" .. weaponData.name .. "' zu entfernen.")
+                -- Hier rufen wir RemoveItem mit der Annahme auf, dass wir genau diesen einen Stack (Menge 1) entfernen wollen, den wir gegeben haben.
+                -- Wenn der Spieler die Waffe irgendwie dupliziert hat, bleibt der Rest bestehen.
+                local success, removedInfo = exports.ox_inventory:RemoveItem(playerId, weaponData.name, 1)
 
-            if currentAmount and type(currentAmount) == 'number' and currentAmount > 0 then
-                local success, removedCount = exports.ox_inventory:RemoveItem(playerId, weaponData.name, currentAmount)
-                if success and removedCount > 0 then
-                    DebugPrint("Loadout Removal: Waffe " .. weaponData.name .. " (" .. removedCount .. " von " .. currentAmount .. ") von Spieler " .. playerId .. " entfernt.")
+                if success then
+                    local removedCount = 0
+                    if type(removedInfo) == 'number' then
+                        removedCount = removedInfo
+                    elseif type(removedInfo) == 'table' and removedInfo.count then
+                        removedCount = removedInfo.count
+                    elseif success then
+                        removedCount = 1
+                    end
+
+                    if removedCount > 0 then
+                        itemsActuallyRemovedOverall = itemsActuallyRemovedOverall + removedCount
+                        DebugPrint("Loadout REMOVAL: Waffe " .. weaponData.name .. " (entfernt: " .. removedCount .. ") von Spieler " .. playerId .. " erfolgreich via RemoveItem entfernt.")
+                    else
+                        DebugPrint("Loadout REMOVAL INFO: Waffe " .. weaponData.name .. " erfolgreich mit RemoveItem behandelt, aber gemeldete Anzahl entfernt war 0. Spieler " .. playerId .. ". RemovedInfo: " .. json.encode(removedInfo))
+                    end
                 else
-                    DebugPrint("Loadout Removal WARNING: Konnte Waffe " .. weaponData.name .. " nicht (vollständig) von Spieler " .. playerId .. " entfernen. Angefragt: " .. currentAmount .. ", Erfolgreich: " .. tostring(success) .. ", Anzahl entfernt: " .. tostring(removedCount))
+                    DebugPrint("Loadout REMOVAL WARNING: ox_inventory:RemoveItem für Waffe '" .. weaponData.name .. "' bei Spieler " .. playerId .. " meldete keinen Erfolg. Details: " .. json.encode(removedInfo))
                 end
-            elseif not (currentAmount and type(currentAmount) == 'number') then
-                 DebugPrint("Loadout Removal INFO: Waffe " .. weaponData.name .. " nicht als zählbare Menge im Inventar von Spieler " .. playerId .. " gefunden (Search ergab: " .. tostring(currentAmount) .. ").")
             else
-                DebugPrint("Loadout Removal INFO: Waffe " .. weaponData.name .. " nicht im Inventar von Spieler " .. playerId .. " gefunden (Anzahl 0 oder weniger).")
+                DebugPrint("Loadout REMOVAL WARNING: Ungültige weaponData in playerCurrentFFALoadout für Spieler " .. playerId .. " bei Index " .. i .. ": " .. json.encode(weaponData))
             end
         end
+        DebugPrint("Loadout REMOVAL: Insgesamt " .. itemsActuallyRemovedOverall .. " Item-Stacks (basierend auf Erfolgsmeldungen) versucht zu entfernen für Spieler " .. playerId)
         playerCurrentFFALoadout[playerId] = nil
     elseif not exports.ox_inventory then
-        DebugPrint("Loadout Removal ERROR: ox_inventory Export nicht gefunden.")
+        DebugPrint("Loadout REMOVAL ERROR: ox_inventory Export nicht gefunden.")
     elseif not playerCurrentFFALoadout[playerId] or #playerCurrentFFALoadout[playerId] == 0 then
-        DebugPrint("Loadout Removal INFO: Kein FFA-Loadout für Spieler " .. playerId .. " getrackt zum Entfernen.")
+        DebugPrint("Loadout REMOVAL INFO: Kein FFA-Loadout für Spieler " .. playerId .. " getrackt zum Entfernen.")
     end
+    DebugPrint("Loadout REMOVAL: Prozess für Spieler " .. playerId .. " abgeschlossen.")
 end
 
 RegisterNetEvent('ffa:joinLobby')
@@ -159,11 +198,15 @@ AddEventHandler('ffa:joinLobby', function(mapId)
         playerLastLocation[src] = nil
     end
 
+    DebugPrint("FFA Join: Rufe StoreAndClearPlayerInventoryForFFA für Spieler " .. src)
     if not StoreAndClearPlayerInventoryForFFA(src, mapConfig.weapons) then
         xPlayer.showNotification("Fehler bei der Inventarvorbereitung für FFA.")
         if playerLastLocation[src] then playerLastLocation[src] = nil end
+        DebugPrint("FFA Join: StoreAndClearPlayerInventoryForFFA fehlgeschlagen für Spieler " .. src)
         return
     end
+    DebugPrint("FFA Join: StoreAndClearPlayerInventoryForFFA erfolgreich für Spieler " .. src)
+
 
     if not activeLobbies[mapId] then
         activeLobbies[mapId] = { players = {}, mapDetails = mapConfig, playerCount = 0 }
@@ -171,6 +214,7 @@ AddEventHandler('ffa:joinLobby', function(mapId)
 
     if activeLobbies[mapId].playerCount >= mapConfig.maxPlayers then
         xPlayer.showNotification("Die Lobby für " .. mapConfig.displayName .. " ist bereits voll.")
+        DebugPrint("FFA Join: Lobby voll für Spieler " .. src .. ". Rufe RestorePlayerOriginalInventory.")
         RestorePlayerOriginalInventory(src)
         if playerLastLocation[src] then playerLastLocation[src] = nil end
         return
@@ -202,7 +246,10 @@ AddEventHandler('ffa:joinLobby', function(mapId)
         return
     end
 
+    DebugPrint("FFA Join: Rufe GivePlayerMapLoadout für Spieler " .. src)
     GivePlayerMapLoadout(src, mapId)
+    DebugPrint("FFA Join: GivePlayerMapLoadout abgeschlossen für Spieler " .. src)
+
     RegisterPlayerToFFA(src, mapId)
 
     if ped and ped ~= 0 then
@@ -224,9 +271,16 @@ AddEventHandler('ffa:leaveLobby', function(customMapId, customSrc)
     if not activeLobbies[mapId] or not activeLobbies[mapId].players[src] then return end
 
     local mapDisplayName = activeLobbies[mapId].mapDetails.displayName
+    DebugPrint("FFA Leave: Spieler " .. src .. " verlässt FFA für Map " .. mapDisplayName)
 
+    DebugPrint("FFA Leave: Rufe RemovePlayerFFALoadout für Spieler " .. src)
     RemovePlayerFFALoadout(src)
+    DebugPrint("FFA Leave: RemovePlayerFFALoadout abgeschlossen für Spieler " .. src)
+
+    DebugPrint("FFA Leave: Rufe RestorePlayerOriginalInventory für Spieler " .. src)
     RestorePlayerOriginalInventory(src)
+    DebugPrint("FFA Leave: RestorePlayerOriginalInventory abgeschlossen für Spieler " .. src)
+
 
     UnregisterPlayerFromFFA(src)
     TriggerClientEvent('ffa:playerLeftMatch', src)
@@ -244,15 +298,22 @@ AddEventHandler('ffa:leaveLobby', function(customMapId, customSrc)
 
     if activeLobbies[mapId].playerCount == 0 then activeLobbies[mapId] = nil end
     TriggerClientEvent('ffa:updateLobbyView', -1, mapId, activeLobbies[mapId] and activeLobbies[mapId].players or {}, activeLobbies[mapId] and activeLobbies[mapId].playerCount or 0)
+    DebugPrint("FFA Leave: Prozess für Spieler " .. src .. " abgeschlossen.")
 end)
 
 AddEventHandler('esx:playerDropped', function(playerId, reason)
     local currentMapId = playerLobbyMap[playerId]
-    DebugPrint("Spieler (ID: " .. playerId .. ") hat Server verlassen. Grund: " .. reason .. ". Map-ID: " .. tostring(currentMapId))
+    DebugPrint("Player Dropped: Spieler (ID: " .. playerId .. ") hat Server verlassen. Grund: " .. reason .. ". Map-ID: " .. tostring(currentMapId))
 
     if currentMapId then
+        DebugPrint("Player Dropped: Rufe RemovePlayerFFALoadout für Spieler " .. playerId)
         RemovePlayerFFALoadout(playerId)
+        DebugPrint("Player Dropped: RemovePlayerFFALoadout abgeschlossen für Spieler " .. playerId)
+
+        DebugPrint("Player Dropped: Rufe RestorePlayerOriginalInventory für Spieler " .. playerId)
         RestorePlayerOriginalInventory(playerId)
+        DebugPrint("Player Dropped: RestorePlayerOriginalInventory abgeschlossen für Spieler " .. playerId)
+
         playerLastLocation[playerId] = nil
 
         local lobby = activeLobbies[currentMapId]
@@ -265,41 +326,46 @@ AddEventHandler('esx:playerDropped', function(playerId, reason)
         playerLobbyMap[playerId] = nil
     end
     UnregisterPlayerFromFFA(playerId)
+    DebugPrint("Player Dropped: Prozess für Spieler " .. playerId .. " abgeschlossen.")
 end)
 
 function GivePlayerMapLoadout(playerId, mapId)
     local xPlayer = ESX.GetPlayerFromId(playerId)
     local mapConfig = getMapConfigById(mapId)
 
-    DebugPrint("Loadout: GivePlayerMapLoadout für Spieler " .. playerId .. ", MapID " .. mapId)
-    if not mapConfig then DebugPrint("Loadout ERROR: Map-Konfig nicht gefunden."); return end
-    if not mapConfig.weapons or #mapConfig.weapons == 0 then DebugPrint("Loadout WARNING: Keine Waffen in Config."); if xPlayer then xPlayer.showNotification("Keine Waffen für diese Map konfiguriert.") end; return end
-    DebugPrint("Loadout: Waffenkonfig: " .. json.encode(mapConfig.weapons))
+    DebugPrint("Loadout GIVE: Aufgerufen für Spieler " .. playerId .. ", MapID " .. mapId)
+    if not mapConfig then DebugPrint("Loadout GIVE ERROR: Map-Konfig nicht gefunden für MapID " .. mapId); return end
+    if not mapConfig.weapons or #mapConfig.weapons == 0 then DebugPrint("Loadout GIVE WARNING: Keine Waffen in Config für MapID " .. mapId); if xPlayer then xPlayer.showNotification("Keine Waffen für diese Map konfiguriert.") end; return end
+    DebugPrint("Loadout GIVE: Waffenkonfig für '" .. mapConfig.displayName .. "': " .. json.encode(mapConfig.weapons))
 
     playerCurrentFFALoadout[playerId] = {}
 
     if exports.ox_inventory then
+        DebugPrint("Loadout GIVE: ox_inventory Export gefunden für Spieler " .. playerId)
         for i, weaponData in ipairs(mapConfig.weapons) do
+            DebugPrint("Loadout GIVE: Verarbeite Waffe " .. i .. ": " .. json.encode(weaponData) .. " für Spieler " .. playerId)
             if weaponData.name and weaponData.ammo and tonumber(weaponData.ammo) then
                 local weaponName = tostring(weaponData.name)
                 local weaponAmmo = tonumber(weaponData.ammo)
                 local metadata = { ammo = weaponAmmo }
 
+                DebugPrint("Loadout GIVE: Versuche ox_inventory:AddItem für Spieler " .. playerId .. " - Waffe: " .. weaponName .. ", Munition: " .. weaponAmmo)
                 local success, itemData = exports.ox_inventory:AddItem(playerId, weaponName, 1, metadata)
                 if success and itemData then
                     table.insert(playerCurrentFFALoadout[playerId], {name = weaponName, ammo = weaponAmmo})
-                    DebugPrint("Loadout: Spieler " .. playerId .. " erhielt " .. weaponName .. " via ox_inventory.")
+                    DebugPrint("Loadout GIVE: Spieler " .. playerId .. " erhielt " .. weaponName .. " (Munition: " .. weaponAmmo .. ") via ox_inventory. ItemData: " .. json.encode(itemData))
+                    DebugPrint("Loadout GIVE: playerCurrentFFALoadout für Spieler " .. playerId .. " jetzt: " .. json.encode(playerCurrentFFALoadout[playerId]))
                 else
-                    DebugPrint("Loadout ERROR: ox_inventory:AddItem für " .. weaponName .. " fehlgeschlagen. Erfolg: "..tostring(success))
+                    DebugPrint("Loadout GIVE ERROR: ox_inventory:AddItem für " .. weaponName .. " (Spieler: " .. playerId .. ") fehlgeschlagen. Erfolg: "..tostring(success) .. ", ItemData: " .. json.encode(itemData))
                 end
             else
-                DebugPrint("Loadout WARNING: Ungültige Waffendaten: Name=" .. tostring(weaponData.name) .. ", Ammo=" .. tostring(weaponData.ammo))
+                DebugPrint("Loadout GIVE WARNING: Ungültige Waffendaten für Spieler " .. playerId .. ": Name=" .. tostring(weaponData.name) .. ", Ammo=" .. tostring(weaponData.ammo))
             end
         end
         if xPlayer then xPlayer.showNotification("FFA-Loadout für '" .. mapConfig.displayName .. "' erhalten.") end
-        DebugPrint("Loadout: Prozess für Spieler " .. playerId .. " abgeschlossen.")
+        DebugPrint("Loadout GIVE: Prozess für Spieler " .. playerId .. " abgeschlossen. Finales getracktes Loadout: " .. json.encode(playerCurrentFFALoadout[playerId]))
     else
-        DebugPrint("Loadout ERROR: ox_inventory Export nicht gefunden.")
+        DebugPrint("Loadout GIVE ERROR: ox_inventory Export nicht gefunden. Waffen können nicht gegeben werden für Spieler " .. playerId)
         if xPlayer then xPlayer.showNotification("Fehler: Inventarsystem nicht gefunden.") end
     end
 end
@@ -338,11 +404,12 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
     Citizen.CreateThread(function()
         Wait(Config.RespawnDelay or 3000)
         if not playerFFAState[src] then DebugPrint("Spieler " .. src .. " hat FFA verlassen vor Respawn."); return end
-        if not ESX.GetPlayerFromId(src) then DebugPrint("Spieler " .. src .. " offline vor Respawn."); UnregisterPlayerFromFFA(src); return end
+        local currentXPlayer = ESX.GetPlayerFromId(src)
+        if not currentXPlayer then DebugPrint("Spieler " .. src .. " offline vor Respawn."); UnregisterPlayerFromFFA(src); return end
 
         if not mapConfig.spawnPoints or #mapConfig.spawnPoints == 0 then
             DebugPrint("FEHLER: Keine Spawnpunkte für Respawn auf Map " .. mapId)
-            xPlayer.showNotification("Fehler: Respawn nicht möglich (keine Spawns).")
+            currentXPlayer.showNotification("Fehler: Respawn nicht möglich (keine Spawns).")
             UnregisterPlayerFromFFA(src); TriggerClientEvent('ffa:playerLeftMatch', src); SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
             return
         end
@@ -350,12 +417,12 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
 
         if randomSpawnPoint and randomSpawnPoint.x and randomSpawnPoint.y and randomSpawnPoint.z then
             TriggerClientEvent('ffa:setClientPedCoords', src, { x = tonumber(randomSpawnPoint.x), y = tonumber(randomSpawnPoint.y), z = tonumber(randomSpawnPoint.z), heading = randomSpawnPoint.h or 0.0 })
-            xPlayer.triggerEvent('esx_ambulancejob:revive', src)
-            Wait(150) -- Wait for revive to potentially complete before other actions
+            currentXPlayer.triggerEvent('esx_ambulancejob:revive', src)
+            Wait(150)
         else
             DebugPrint("FEHLER: Kritischer Fehler bei Respawn-Definition (Koordinaten).")
-            xPlayer.showNotification("Fehler: Kritischer Fehler bei Respawn-Definition.")
-            xPlayer.triggerEvent('esx_ambulancejob:revive', src)
+            currentXPlayer.showNotification("Fehler: Kritischer Fehler bei Respawn-Definition.")
+            currentXPlayer.triggerEvent('esx_ambulancejob:revive', src)
             UnregisterPlayerFromFFA(src); TriggerClientEvent('ffa:playerLeftMatch', src); SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
             return
         end
@@ -367,7 +434,10 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
             DebugPrint("FEHLER: Konnte Ped für Health/Armor Set beim Respawn nicht bekommen.")
         end
 
+        DebugPrint("RESPAWN: Rufe GivePlayerMapLoadout für Spieler " .. src)
         GivePlayerMapLoadout(src, mapId)
+        DebugPrint("RESPAWN: GivePlayerMapLoadout abgeschlossen für Spieler " .. src)
+
 
         playerFFAState[src].isDead = false
         TriggerClientEvent('ffa:playerRespawned', src)
