@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifier&display=swap');
 
 body {
     font-family: 'Creepster', cursive;
@@ -14,189 +14,238 @@ body {
     background-size: cover;
 }
 
+#zombie-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+    z-index: -1;
+}
+
+#blood-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url(https://i.imgur.com/v2C0iNJ.png) repeat;
+    opacity: 0.2;
+    animation: bloodFlow 20s linear infinite;
+    z-index: 0;
+}
+
+@keyframes bloodFlow {
+    from { background-position: 0 0; }
+    to { background-position: 1000px 500px; }
+}
+
 #ffa-container {
-    width: 600px;
-    padding: 20px;
-    background-color: rgba(10, 10, 10, 0.85);
-    border: 2px solid #8B0000;
-    border-radius: 15px;
-    box-shadow: 0 0 25px rgba(139, 0, 0, 0.7), inset 0 0 10px rgba(0, 0, 0, 0.5);
-    color: #f5f5f5;
+    width: 700px;
+    padding: 25px;
+    background-color: rgba(15, 15, 15, 0.9);
+    border: 3px solid #7B0000;
+    border-radius: 20px;
+    box-shadow: 0 0 30px rgba(123, 0, 0, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.6);
+    color: #e0e0e0;
     text-align: center;
-    max-height: 85vh;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
     position: relative;
-    overflow: hidden;
-}
-
-#ffa-container::before {
-    content: '';
-    position: absolute;
-    top: -50px;
-    left: -50px;
-    right: -50px;
-    bottom: -50px;
-    background: radial-gradient(circle, rgba(255, 0, 0, 0.1) 10%, transparent 40%);
-    pointer-events: none;
-    animation: pulse 5s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 0.3; }
-    50% { transform: scale(1.1); opacity: 0.5; }
-    100% { transform: scale(1); opacity: 0.3; }
+    z-index: 1;
+    backdrop-filter: blur(3px);
 }
 
 .header {
     display: flex;
-    justify-content: center; /* Zentriert den Titel */
+    justify-content: center;
     align-items: center;
-    padding-bottom: 15px;
-    border-bottom: 2px dashed #8B0000;
-    margin-bottom: 15px;
+    padding-bottom: 20px;
+    border-bottom: 3px dashed #7B0000;
+    margin-bottom: 20px;
     position: relative;
 }
 
 h1 {
-    color: #DC143C; /* Crimson Red */
+    font-family: 'Nosifier', cursive;
+    color: #E53935;
     margin: 0;
-    font-size: 3em;
-    text-shadow: 2px 2px 4px #000, 0 0 10px #ff0000;
-    letter-spacing: 3px;
+    font-size: 3.5em;
+    text-shadow: 3px 3px 5px #000, 0 0 15px #ff0000, 0 0 25px #ff4500;
+    letter-spacing: 4px;
+    animation: flicker 1.5s infinite alternate;
+}
+
+@keyframes flicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        text-shadow: 3px 3px 5px #000, 0 0 15px #ff0000, 0 0 25px #ff4500, 0 0 40px #ff6347;
+    }
+    20%, 24%, 55% {
+        text-shadow: none;
+    }
 }
 
 .close-btn {
-    background-color: #8B0000;
+    background-color: #7B0000;
     color: white;
-    border: 2px solid #DC143C;
+    border: 2px solid #E53935;
     border-radius: 50%;
-    width: 35px;
-    height: 35px;
-    font-size: 20px;
-    line-height: 31px;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    line-height: 36px;
     text-align: center;
     cursor: pointer;
     position: absolute;
-    top: 10px;
-    right: 10px;
-    box-shadow: 0 0 10px #ff0000;
-    transition: all 0.3s ease;
+    top: -15px;
+    right: -15px;
+    box-shadow: 0 0 15px #ff0000;
+    transition: all 0.4s ease-in-out;
+    z-index: 10;
 }
 
 .close-btn:hover {
-    background-color: #DC143C;
-    transform: scale(1.1) rotate(360deg);
+    background-color: #E53935;
+    transform: scale(1.2) rotate(360deg);
+    box-shadow: 0 0 25px #ff4500;
 }
 
 #map-list-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-    padding: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+    padding: 25px;
     overflow-y: auto;
     flex-grow: 1;
 }
 
 .map-card {
-    background-color: rgba(30, 0, 0, 0.7);
-    border: 1px solid #8B0000;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 0 5px rgba(139,0,0,0.5);
+    background: linear-gradient(145deg, rgba(30, 0, 0, 0.8), rgba(50, 10, 10, 0.8));
+    border: 2px solid #7B0000;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.7), inset 0 0 8px rgba(123,0,0,0.6);
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.4s, box-shadow 0.4s;
     position: relative;
+    overflow: hidden;
 }
 
 .map-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(139,0,0,0.8), inset 0 0 10px rgba(139,0,0,0.7);
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 12px 24px rgba(123,0,0,0.9), inset 0 0 12px rgba(123,0,0,0.8);
 }
 
 .map-card img {
     width: 100%;
-    height: 120px;
+    height: 140px;
     object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border: 2px solid #8B0000;
-    filter: grayscale(50%) sepia(30%);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 3px solid #7B0000;
+    filter: grayscale(60%) sepia(40%) brightness(0.9);
+    transition: filter 0.3s;
+}
+
+.map-card:hover img {
+    filter: grayscale(30%) sepia(20%) brightness(1.1);
 }
 
 .map-card h3 {
     margin: 10px 0;
-    color: #DC143C;
-    font-size: 1.5em;
-    text-shadow: 1px 1px 2px #000;
+    color: #E53935;
+    font-size: 1.8em;
+    text-shadow: 2px 2px 3px #000;
 }
 
 .map-card p {
-    font-size: 0.9em;
-    color: #ccc;
-    margin-bottom: 15px;
+    font-size: 1em;
+    color: #bbb;
+    margin-bottom: 20px;
     flex-grow: 1;
 }
 
 .map-card .players {
-    font-size: 1em;
-    color: #f5f5f5;
-    margin-bottom: 15px;
+    font-size: 1.1em;
+    color: #e0e0e0;
+    margin-bottom: 20px;
     font-weight: bold;
 }
 
 .join-btn {
-    padding: 10px 15px;
-    background: linear-gradient(145deg, #8B0000, #DC143C);
+    padding: 12px 20px;
+    background: linear-gradient(145deg, #7B0000, #E53935);
     color: white;
     border: 2px solid #f5f5f5;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 1.1em;
-    width: 90%;
+    font-size: 1.2em;
+    width: 100%;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 2px 5px #000;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 8px #000;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .join-btn:hover {
-    background: linear-gradient(145deg, #DC143C, #8B0000);
-    box-shadow: 0 4px 10px #ff0000;
+    background: linear-gradient(145deg, #E53935, #7B0000);
+    box-shadow: 0 6px 12px #ff0000;
     transform: scale(1.05);
 }
 
+.join-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300%;
+    height: 300%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.5s ease;
+}
+
+.join-btn:hover::before {
+    transform: translate(-50%, -50%) scale(1);
+}
+
 #lobby-details {
-    padding: 20px;
-    border-top: 2px dashed #8B0000;
-    margin-top: 15px;
+    padding: 25px;
+    border-top: 3px dashed #7B0000;
+    margin-top: 20px;
 }
 
 #lobby-details h2 {
-    color: #DC143C;
-    font-size: 2em;
-    text-shadow: 1px 1px 3px #000;
+    font-family: 'Nosifier', cursive;
+    color: #E53935;
+    font-size: 2.5em;
+    text-shadow: 2px 2px 4px #000;
 }
 
 #player-list {
-    min-height: 60px;
-    background-color: rgba(0, 0, 0, 0.5);
-    border: 1px solid #8B0000;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
+    min-height: 70px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 2px solid #7B0000;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
     text-align: left;
 }
 
 #player-list p {
-    margin: 4px 0;
-    font-size: 1em;
-    color: #ddd;
-    border-bottom: 1px dotted #444;
-    padding-bottom: 4px;
+    margin: 5px 0;
+    font-size: 1.1em;
+    color: #ccc;
+    border-bottom: 1px dotted #555;
+    padding-bottom: 5px;
 }
 
 #player-list p:last-child {
@@ -204,43 +253,43 @@ h1 {
 }
 
 #leaveLobbyButton {
-    background: linear-gradient(145deg, #5A0000, #8B0000);
-    border: 2px solid #ccc;
+    background: linear-gradient(145deg, #4A0000, #7B0000);
+    border-color: #ccc;
 }
 #leaveLobbyButton:hover {
-    background: linear-gradient(145deg, #8B0000, #5A0000);
-    box-shadow: 0 0 12px #ff4500;
+    background: linear-gradient(145deg, #7B0000, #4A0000);
+    box-shadow: 0 0 15px #ff4500;
 }
 
 button {
-    padding: 12px 18px;
+    padding: 14px 22px;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 15px;
     font-family: 'Creepster', cursive;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
 }
 
-/* Scrollbar-Styling für Webkit-Browser */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 12px;
+    width: 14px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #333;
+    background: #222;
     border-radius: 10px;
-    box-shadow: inset 0 0 5px grey;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #8B0000;
+    background: #7B0000;
     border-radius: 10px;
-    border: 2px solid #DC143C;
+    border: 3px solid #E53935;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #DC143C;
+    background: #E53935;
 }
