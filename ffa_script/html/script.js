@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
             weapons.forEach(weapon => {
                 const option = document.createElement('option');
                 option.value = weapon.name;
-                option.textContent = weapon.name;
+                option.textContent = weapon.label;
                 weaponsSelect.appendChild(option);
             });
         }
@@ -112,7 +112,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const lobbyMap = document.getElementById('lobby-map').value;
             const selectedWeapons = [...document.getElementById('lobby-weapons').options]
                                       .filter(option => option.selected)
-                                      .map(option => option.value);
+                                      .map(option => {
+                                          return { name: option.value, ammo: 100 } // Default ammo
+                                      });
 
             if (!lobbyName) {
                 alert("Bitte einen Lobby-Namen eingeben.");
