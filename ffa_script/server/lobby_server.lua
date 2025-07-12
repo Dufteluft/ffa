@@ -87,3 +87,10 @@ ESX.RegisterCommand('ffa', 'user', function(xPlayer, args, showError)
     end
     TriggerClientEvent('esx_ffa:openMenu', src, lobbies, playerStats, leaderboard, Config.Maps, allWeapons)
 end, false, { help = 'Öffnet das FFA Menü' })
+
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(5000)
+        TriggerClientEvent('esx_ffa:updateLobbies', -1, lobbies)
+    end
+end)

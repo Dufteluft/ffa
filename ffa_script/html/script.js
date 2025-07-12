@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Event Listener für "Beitreten"-Buttons
     lobbyListContainer.addEventListener('click', function(event) {
         if (event.target.classList.contains('join-lobby-btn')) {
-            const lobbyId = event.target.getAttribute('data-lobby-id');
+            const lobbyId = parseInt(event.target.getAttribute('data-lobby-id'), 10);
             fetch(`https://${GetParentResourceName()}/joinLobby`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json; charset=UTF-8' },
