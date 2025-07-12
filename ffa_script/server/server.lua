@@ -21,6 +21,7 @@ end)
 
 local activeLobbies = {}
 local playerLobbyMap = {}
+local playerCurrentFFALoadout = {} -- Speichert das aktuelle Loadout eines Spielers im FFA: playerId = { {name='weapon_pistol', ammo=100}, ... }
 
 local function getMapConfigById(mapId)
     for _, mapConfig in ipairs(Config.Maps) do
@@ -29,6 +30,24 @@ local function getMapConfigById(mapId)
         end
     end
     return nil
+end
+
+-- Funktion zum Entfernen des aktuellen FFA-Loadouts eines Spielers aus ox_inventory
+local function RemovePlayerFFALoadout(playerId)
+    if exports.ox_inventory and playerCurrentFFALoadout[playerId] then
+        DebugPrint("Loadout Removal: Versuche FFA Loadout für Spieler " .. playerId .. " zu entfernen.")
+        for _, weaponData in ipairs(playerCurrentFFALoadout[playerId]) do
+            local success, removedCount = exports.ox_inventory:RemoveItem(playerId, weaponData.name, 1) -- Annahme: Jede Waffe ist ein Stack von 1
+            if success and removedCount > 0 then
+                DebugPrint("Loadout Removal: Waffe " .. weaponData.name .. " (" .. removedCount .. ") von Spieler " .. playerId .. " entfernt.")
+            else
+                DebugPrint("Loadout Removal WARNING: Konnte Waffe " .. weaponData.name .. " nicht (vollständig) von Spieler " .. playerId .. " entfernen. Erfolgreich: " .. tostring(success) .. ", Anzahl: " .. tostring(removedCount))
+            end
+        end
+        playerCurrentFFALoadout[playerId] = nil -- Loadout-Tracking zurücksetzen
+    elseif not exports.ox_inventory then
+        DebugPrint("Loadout Removal ERROR: ox_inventory Export nicht gefunden.")
+    end
 end
 
 RegisterNetEvent('ffa:joinLobby')
@@ -95,20 +114,19 @@ AddEventHandler('ffa:joinLobby', function(mapId)
     local routingBucket = 5000 + mapIndex
     SetPlayerRoutingBucket(src, routingBucket)
 
-    DebugPrint("Versuche Spieler " .. xPlayer.getName() .. " zu teleportieren. randomSpawn Tabelle: " .. json.encode(randomSpawn))
     if randomSpawn and randomSpawn.x and randomSpawn.y and randomSpawn.z then
         local newX, newY, newZ = tonumber(randomSpawn.x), tonumber(randomSpawn.y), tonumber(randomSpawn.z)
         if newX and newY and newZ then
             TriggerClientEvent('ffa:setClientPedCoords', src, { x = newX, y = newY, z = newZ })
             DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") Teleport-Event an Client gesendet für Coords (" .. newX .. "," .. newY .. "," .. newZ .. "). Routing Bucket: " .. routingBucket)
         else
-            DebugPrint("FEHLER: Konnte Koordinaten nicht in Zahlen umwandeln für Spieler " .. xPlayer.getName() .. ". x="..tostring(randomSpawn.x)..", y="..tostring(randomSpawn.y)..", z="..tostring(randomSpawn.z))
-            xPlayer.showNotification("Fehler: Ungültige Spawnpunkt-Koordinaten für diese Map.")
+            DebugPrint("FEHLER: Konnte Koordinaten nicht in Zahlen umwandeln. x="..tostring(randomSpawn.x)..", y="..tostring(randomSpawn.y)..", z="..tostring(randomSpawn.z))
+            xPlayer.showNotification("Fehler: Ungültige Spawnpunkt-Koordinaten.")
             TriggerEvent('ffa:leaveLobby', mapId, src)
             return
         end
     else
-        DebugPrint("FEHLER: randomSpawn oder dessen Koordinaten sind nil für Spieler " .. xPlayer.getName() .. ". randomSpawn: " .. json.encode(randomSpawn))
+        DebugPrint("FEHLER: randomSpawn oder dessen Koordinaten sind nil. randomSpawn: " .. json.encode(randomSpawn))
         xPlayer.showNotification("Fehler: Kritischer Fehler bei Spawnpunkt-Definition.")
         TriggerEvent('ffa:leaveLobby', mapId, src)
         return
@@ -117,7 +135,7 @@ AddEventHandler('ffa:joinLobby', function(mapId)
     GivePlayerMapLoadout(src, mapId)
     RegisterPlayerToFFA(src, mapId)
 
-    local playerPedForHealth = GetPlayerPed(src) -- Ped holen für Max Health
+    local playerPedForHealth = GetPlayerPed(src)
     if playerPedForHealth and playerPedForHealth ~= 0 then
         local maxHealth = GetEntityMaxHealth(playerPedForHealth)
         TriggerClientEvent('ffa:setClientPedHealthArmor', src, maxHealth, 100)
@@ -147,13 +165,20 @@ AddEventHandler('ffa:leaveLobby', function(customMapId, customSrc)
         return
     end
 
+    local mapConfig = getMapConfigById(mapId) -- Holen der Map-Konfiguration für das Waffenentfernen
     local mapDisplayName = activeLobbies[mapId].mapDetails.displayName
+
+    -- Waffen aus ox_inventory entfernen, bevor andere Aktionen durchgeführt werden
+    if mapConfig and mapConfig.weapons then
+        RemovePlayerFFALoadout(src) -- Verwendet die neue Funktion
+    else
+        DebugPrint("Lobby Leave: Keine Waffenkonfiguration für Map " .. mapId .. " gefunden, Waffen können nicht spezifisch entfernt werden.")
+    end
 
     UnregisterPlayerFromFFA(src)
     TriggerClientEvent('ffa:playerLeftMatch', src)
     SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
     DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") aus FFA-Match auf Map '" .. mapDisplayName .. "' entfernt und Routing Bucket zurückgesetzt.")
-    -- Hier könnte man den Spieler auch an einen sicheren Ort teleportieren via Client-Event
 
     activeLobbies[mapId].players[src] = nil
     activeLobbies[mapId].playerCount = activeLobbies[mapId].playerCount - 1
@@ -175,6 +200,8 @@ AddEventHandler('esx:playerDropped', function(playerId, reason)
     DebugPrint("Spieler (ID: " .. playerId .. ") hat Server verlassen. Grund: " .. reason .. ". Map-ID aus Lobby: " .. tostring(currentMapId))
 
     if currentMapId then
+        RemovePlayerFFALoadout(playerId) -- Waffen entfernen beim Disconnect
+
         local lobby = activeLobbies[currentMapId]
         if lobby and lobby.players[playerId] then
             lobby.players[playerId] = nil
@@ -216,39 +243,40 @@ function GivePlayerMapLoadout(playerId, mapId)
     end
     DebugPrint("Loadout: Waffenkonfiguration für Map '" .. mapConfig.displayName .. "': " .. json.encode(mapConfig.weapons))
 
-    local playerPed = GetPlayerPed(playerId)
-    if not playerPed or playerPed == 0 then
-        DebugPrint("Loadout ERROR: Konnte Ped ("..tostring(playerPed)..") für Spieler " .. playerId .. " nicht bekommen. Waffen können nicht geändert werden.")
-        if xPlayer then
-            xPlayer.showNotification("Fehler: Spieler-Entität nicht gefunden für Waffen-Loadout.")
-        end
-        return
-    end
+    -- Vorherige FFA-Waffen entfernen, falls vorhanden (um Duplikate zu vermeiden, falls etwas schiefgeht)
+    RemovePlayerFFALoadout(playerId)
+    playerCurrentFFALoadout[playerId] = {} -- Tracking für dieses Loadout initialisieren
 
-    RemoveAllPedWeapons(playerPed, true)
-    DebugPrint("Loadout: Alle Waffen von Spieler " .. playerId .. " (Ped: " .. playerPed .. ") entfernt (via Native).")
+    if exports.ox_inventory then
+        for i, weaponData in ipairs(mapConfig.weapons) do
+            if weaponData.name and weaponData.ammo and tonumber(weaponData.ammo) then
+                local weaponName = tostring(weaponData.name)
+                local weaponAmmo = tonumber(weaponData.ammo)
+                local metadata = { ammo = weaponAmmo }
+                -- Hier könnten weitere Metadaten für ox_inventory relevant sein, z.B. durability, serial, etc.
+                -- Für Standardwaffen reicht oft {ammo = ...}
 
-    for i, weaponData in ipairs(mapConfig.weapons) do
-        if weaponData.hash and weaponData.ammo and tonumber(weaponData.ammo) then
-            local weaponName = tostring(weaponData.hash)
-            local weaponAmmo = tonumber(weaponData.ammo)
-            local weaponHashKey = GetHashKey(weaponName)
-
-            if weaponHashKey == 0 or weaponHashKey == -1 then -- GetHashKey gibt 0 oder -1 zurück, wenn der Name ungültig ist
-                 DebugPrint("Loadout WARNING: Ungültiger Waffenname '" .. weaponName .. "' in Map-Konfiguration (Index " .. i .. "). Hash-Key ist 0 oder -1.")
+                local success, itemData = exports.ox_inventory:AddItem(playerId, weaponName, 1, metadata)
+                if success and itemData then
+                    table.insert(playerCurrentFFALoadout[playerId], {name = weaponName, ammo = weaponAmmo}) -- Gegebene Waffe tracken
+                    DebugPrint("Loadout: Spieler " .. playerId .. " erhielt Waffe " .. weaponName .. " mit " .. weaponAmmo .. " Munition via ox_inventory. ItemData: " .. json.encode(itemData))
+                else
+                    DebugPrint("Loadout ERROR: Konnte Waffe " .. weaponName .. " nicht zu ox_inventory für Spieler " .. playerId .. " hinzufügen. Erfolg: "..tostring(success))
+                end
             else
-                GiveWeaponToPed(playerPed, weaponHashKey, weaponAmmo, false, true)
-                DebugPrint("Loadout: Spieler " .. playerId .. " (Ped: " .. playerPed .. ") erhielt Waffe " .. weaponName .. " (Hash: " .. weaponHashKey .. ") mit " .. weaponAmmo .. " Munition (via Native).")
+                DebugPrint("Loadout WARNING: Ungültige oder fehlende Waffendaten/Munition für MapID " .. mapId .. " (Index " .. i .. "): Name=" .. tostring(weaponData.name) .. ", Ammo=" .. tostring(weaponData.ammo))
             end
-        else
-            DebugPrint("Loadout WARNING: Ungültige oder fehlende Waffendaten/Munition für MapID " .. mapId .. " (Index " .. i .. "): Name=" .. tostring(weaponData.hash) .. ", Ammo=" .. tostring(weaponData.ammo))
+        end
+        if xPlayer then
+            xPlayer.showNotification("Du hast das Waffen-Loadout für '" .. mapConfig.displayName .. "' via ox_inventory erhalten.")
+        end
+        DebugPrint("Loadout: Waffen-Loadout-Prozess via ox_inventory für Map '" .. mapConfig.displayName .. "' an Spieler " .. playerId .. " abgeschlossen.")
+    else
+        DebugPrint("Loadout ERROR: ox_inventory Export nicht gefunden. Waffen können nicht gegeben werden.")
+        if xPlayer then
+            xPlayer.showNotification("Fehler: Inventarsystem (ox_inventory) nicht gefunden.")
         end
     end
-
-    if xPlayer then
-        xPlayer.showNotification("Du hast das Waffen-Loadout für '" .. mapConfig.displayName .. "' erhalten.")
-    end
-    DebugPrint("Loadout: Waffen-Loadout-Prozess für Map '" .. mapConfig.displayName .. "' an Spieler " .. playerId .. " (Ped: " .. playerPed .. ") abgeschlossen (via Native).")
 end
 
 local playerFFAState = {}
@@ -319,7 +347,6 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
         local spawnPoints = mapConfig.spawnPoints
         local randomSpawnPoint = spawnPoints[math.random(1, #spawnPoints)]
 
-        DebugPrint("Versuche Spieler " .. xPlayer.getName() .. " zu respawnen. randomSpawnPoint Tabelle: " .. json.encode(randomSpawnPoint))
         if randomSpawnPoint and randomSpawnPoint.x and randomSpawnPoint.y and randomSpawnPoint.z then
             local respawnX, respawnY, respawnZ = tonumber(randomSpawnPoint.x), tonumber(randomSpawnPoint.y), tonumber(randomSpawnPoint.z)
             if respawnX and respawnY and respawnZ then
@@ -329,7 +356,7 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
                 TriggerClientEvent('ffa:setClientPedCoords', src, { x = respawnX, y = respawnY, z = respawnZ })
                 DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") Respawn-Teleport-Event an Client gesendet für Coords (" .. respawnX .. "," .. respawnY .. "," .. respawnZ .. ").")
             else
-                DebugPrint("FEHLER beim Respawn: Konnte Koordinaten nicht in Zahlen umwandeln für Spieler " .. xPlayer.getName() .. ". x="..tostring(randomSpawnPoint.x)..", y="..tostring(randomSpawnPoint.y)..", z="..tostring(randomSpawnPoint.z))
+                DebugPrint("FEHLER beim Respawn: Konnte Koordinaten nicht in Zahlen umwandeln. x="..tostring(randomSpawnPoint.x)..", y="..tostring(randomSpawnPoint.y)..", z="..tostring(randomSpawnPoint.z))
                 xPlayer.showNotification("Fehler: Ungültige Respawn-Koordinaten.")
                 xPlayer.triggerEvent('esx_ambulancejob:revive', src)
                 UnregisterPlayerFromFFA(src)
@@ -338,7 +365,7 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
                 return
             end
         else
-            DebugPrint("FEHLER beim Respawn: randomSpawnPoint oder dessen Koordinaten sind nil für Spieler " .. xPlayer.getName() .. ". randomSpawnPoint: " .. json.encode(randomSpawnPoint))
+            DebugPrint("FEHLER beim Respawn: randomSpawnPoint oder dessen Koordinaten sind nil. randomSpawnPoint: " .. json.encode(randomSpawnPoint))
             xPlayer.showNotification("Fehler: Kritischer Fehler bei Respawn-Definition.")
             xPlayer.triggerEvent('esx_ambulancejob:revive', src)
             UnregisterPlayerFromFFA(src)
@@ -356,7 +383,7 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
             DebugPrint("FEHLER: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für Health/Armor Set beim Respawn.")
         end
 
-        GivePlayerMapLoadout(src, mapId)
+        GivePlayerMapLoadout(src, mapId) -- Gibt Waffen erneut via ox_inventory
 
         playerFFAState[src].isDead = false
         TriggerClientEvent('ffa:playerRespawned', src)

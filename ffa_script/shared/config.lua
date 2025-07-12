@@ -40,8 +40,9 @@ Config.Maps = {
             { x = 1080.0, y = -1480.0, z = 35.0 },
         },
         weapons = {
-            { hash = 'WEAPON_PUMPSHOTGUN', ammo = 60 },
-            { hash = 'WEAPON_PISTOL', ammo = 120 },
+            -- Ox Inventory Item-Namen verwenden!
+            { name = 'weapon_pumpshotgun', ammo = 60 },
+            { name = 'weapon_pistol', ammo = 120 },
         },
         boundaries = {
             min = { x = 1050.0, y = -1550.0, z = 30.0 }, -- Untere süd-westliche Ecke
@@ -61,9 +62,9 @@ Config.Maps = {
             { x = 3050.00, y = -4690.00, z = 15.20 },
         },
         weapons = {
-            { hash = 'WEAPON_ASSAULTRIFLE', ammo = 240 },
-            { hash = 'WEAPON_SNIPERRIFLE', ammo = 40 },
-            { hash = 'WEAPON_COMBATPISTOL', ammo = 90 },
+            { name = 'weapon_assaultrifle', ammo = 240 },
+            { name = 'weapon_sniperrifle', ammo = 40 },
+            { name = 'weapon_combatpistol', ammo = 90 },
         },
         boundaries = {
             min = { x = 3000.0, y = -4750.0, z = 10.0 },
@@ -83,8 +84,8 @@ Config.Maps = {
             { x = 200.0, y = 2945.0, z = 45.5 },
         },
         weapons = {
-            { hash = 'WEAPON_SMG', ammo = 200 },
-            { hash = 'WEAPON_SAWNOFFSHOTGUN', ammo = 50 },
+            { name = 'weapon_smg', ammo = 200 },
+            { name = 'weapon_sawnoffshotgun', ammo = 50 },
         },
         boundaries = {
             min = { x = 150.0, y = 2900.0, z = 40.0 },
