@@ -44,7 +44,7 @@ body {
 #ffa-container {
     width: 700px;
     padding: 25px;
-    background-color: transparent;
+    background-color: rgba(15, 15, 15, 0.9);
     border: 3px solid #7B0000;
     border-radius: 20px;
     box-shadow: 0 0 30px rgba(123, 0, 0, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.6);
@@ -337,7 +337,7 @@ button {
     right: 20px;
     transform: translateY(-50%);
     width: 250px;
-    background-color: transparent;
+    background-color: rgba(15, 15, 15, 0.9);
     border: 3px solid #7B0000;
     border-radius: 20px;
     box-shadow: 0 0 30px rgba(123, 0, 0, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.6);
@@ -392,7 +392,7 @@ button {
 }
 
 .stat-box {
-    background-color: transparent;
+    background-color: rgba(15, 15, 15, 0.9);
     border: 3px solid #7B0000;
     border-radius: 20px;
     box-shadow: 0 0 20px rgba(123, 0, 0, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.6);
