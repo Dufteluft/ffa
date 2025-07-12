@@ -307,5 +307,24 @@ AddEventHandler('ffa:setClientPedHealthArmor', function(health, armor)
     DebugPrint("Client: Gesundheit auf " .. health .. " und Rüstung auf " .. armor .. " gesetzt.")
 end)
 
+-- Befehl zum Verlassen des aktuellen FFA-Matches
+RegisterCommand('quitffa', function(source, args, rawCommand)
+    if isInFFA then
+        DebugPrint("Client: /quitffa Befehl ausgeführt. Verlasse FFA-Match.")
+        ESX.ShowNotification("Du verlässt das FFA-Match...")
+        TriggerServerEvent('ffa:leaveLobby') -- Das serverseitige Event kümmert sich um das Aufräumen
+
+        -- UI schließen, falls offen und der Spieler im FFA war
+        if isMenuOpen then
+            SendNUIMessage({ action = "closeMenu" })
+            SetNuiFocus(false, false)
+            isMenuOpen = false
+        end
+    else
+        ESX.ShowNotification("Du bist derzeit in keinem FFA-Match.")
+        DebugPrint("Client: /quitffa Befehl ausgeführt, aber Spieler ist nicht im FFA.")
+    end
+end, false)
+
 
 DebugPrint("FFA Script Client-Seite geladen.")
