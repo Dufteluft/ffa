@@ -52,6 +52,23 @@ RegisterNUICallback('createLobby', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('joinLobby', function(data, cb)
+    if data and data.mapId then
+        DebugPrint("NUI Callback: joinLobby für MapID: " .. data.mapId)
+        TriggerServerEvent('ffa:joinLobby', data.mapId)
+        cb('ok')
+    else
+        DebugPrint("NUI Callback: joinLobby ohne mapId aufgerufen.")
+        cb('error')
+    end
+end)
+
+RegisterNUICallback('leaveLobby', function(data, cb)
+    DebugPrint("NUI Callback: leaveLobby")
+    TriggerServerEvent('ffa:leaveLobby')
+    cb('ok')
+end)
+
 RegisterNetEvent('ffa:updateLobbyList')
 AddEventHandler('ffa:updateLobbyList', function(lobbies)
     DebugPrint("Client Event: ffa:updateLobbyList erhalten")

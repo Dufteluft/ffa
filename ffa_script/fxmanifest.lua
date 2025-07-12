@@ -12,22 +12,17 @@ shared_scripts {
 
 client_scripts {
     '@es_extended/locale.lua',
-    'client/client.lua',
     'client/lobby_client.lua'
 }
 
 server_scripts {
     '@es_extended/locale.lua',
-    'server/server.lua',
     'server/lobby_server.lua'
 }
 
 ui_page 'html/lobby.html'
 
 files {
-    'html/ui.html',
-    'html/style.css',
-    'html/script.js',
     'html/lobby.html',
     'html/lobby.css',
     'html/lobby.js'
