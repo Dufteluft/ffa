@@ -50,13 +50,23 @@ AddEventHandler('esx_ffa:createLobby', function(data)
         return
     end
 
+    local validWeapons = {}
+    for _, clientWeapon in ipairs(data.weapons) do
+        for _, configWeapon in ipairs(Config.Weapons) do
+            if clientWeapon.name == configWeapon.name then
+                table.insert(validWeapons, clientWeapon)
+                break
+            end
+        end
+    end
+
     local newLobby = {
         id = nextLobbyId,
         name = data.name,
         players = 0,
         maxPlayers = map.maxPlayers,
         mapId = map.id,
-        weapons = data.weapons,
+        weapons = validWeapons,
         owner = src
     }
     table.insert(lobbies, newLobby)
