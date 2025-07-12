@@ -79,21 +79,43 @@ local function RestorePlayerOriginalInventory(playerId)
     end
 
     if playerOriginalInventory[playerId] then
-        DebugPrint("Restore: Versuche Originalinventar für Spieler " .. playerId .. " wiederherzustellen.")
-        -- Versuch, das gesamte Inventar direkt zu setzen (sauberste Methode, falls von ox_inventory unterstützt)
-        local success = exports.ox_inventory:SetInventory(playerId, playerOriginalInventory[playerId])
+        DebugPrint("Restore: Versuche Originalinventar für Spieler " .. playerId .. " wiederherzustellen. Gespeichertes Inventar: " .. json.encode(playerOriginalInventory[playerId]))
 
-        if success then
-            DebugPrint("Restore: Originalinventar für Spieler " .. playerId .. " erfolgreich via SetInventory wiederhergestellt.")
+        -- Da SetInventory nicht existiert, iterieren wir durch die gespeicherten Items und fügen sie einzeln hinzu.
+        -- Wir gehen davon aus, dass playerOriginalInventory[playerId] die Struktur hat, die GetInventory zurückgibt,
+        -- und dass es eine Tabelle 'items' enthält oder direkt eine Liste von Item-Objekten ist.
+        -- ox_inventory:GetInventory gibt oft eine Tabelle zurück, wo die Schlüssel Slot-IDs sind.
+
+        local inventoryData = playerOriginalInventory[playerId]
+        local itemsToRestore = inventoryData.items or inventoryData -- Fallback, falls es direkt eine Item-Liste ist
+
+        if type(itemsToRestore) == "table" then
+            -- Optional: Inventar leeren, bevor Items hinzugefügt werden? Vorsicht!
+            -- exports.ox_inventory:ClearInventory(playerId)
+            -- DebugPrint("Restore: Inventar für Spieler " .. playerId .. " vor Restore geleert (ClearInventory).")
+
+            for slot, itemData in pairs(itemsToRestore) do
+                if type(itemData) == 'table' and itemData.name and itemData.amount then
+                    -- Stelle sicher, dass Metadaten, falls nicht vorhanden, eine leere Tabelle sind, um Fehler zu vermeiden
+                    local metadata = itemData.metadata or {}
+                    -- Der Slot-Parameter bei AddItem ist oft optional oder dient als Vorschlag.
+                    -- Wenn wir den exakten Slot wiederherstellen wollen, müssen wir sicherstellen, dass der Slot frei ist oder AddItem das handhaben kann.
+                    local success, addedItem = exports.ox_inventory:AddItem(playerId, itemData.name, itemData.amount, metadata, itemData.slot)
+                    if success and addedItem then
+                        DebugPrint("Restore: Item " .. itemData.name .. " (x" .. itemData.amount .. ") für Spieler " .. playerId .. " in Slot " .. tostring(itemData.slot) .. " wiederhergestellt.")
+                    else
+                        DebugPrint("Restore WARNING: Konnte Item " .. itemData.name .. " (x" .. itemData.amount .. ") für Spieler " .. playerId .. " nicht wiederherstellen. Erfolg: " .. tostring(success))
+                    end
+                else
+                    DebugPrint("Restore WARNING: Ungültige Item-Daten im gespeicherten Inventar für Spieler " .. playerId .. " bei Slot/Index " .. tostring(slot) .. ": " .. json.encode(itemData))
+                end
+            end
+            DebugPrint("Restore: Manueller Wiederherstellungsprozess für Spieler " .. playerId .. " abgeschlossen.")
         else
-            DebugPrint("Restore WARNING: ox_inventory:SetInventory war nicht erfolgreich oder nicht vorhanden. Versuche manuelles Hinzufügen der Items...")
-            -- Fallback: Items manuell hinzufügen (komplexer, da Slots und Metadaten berücksichtigt werden müssten)
-            -- Für diese Implementierung lassen wir den komplexen manuellen Restore erstmal weg und loggen nur.
-            -- Im Idealfall würde ox_inventory eine robuste SetInventory-Funktion bieten.
-            -- Wenn nicht, müsste man hier durch playerOriginalInventory[playerId].items iterieren und AddItem nutzen.
-            DebugPrint("Restore ERROR: Manueller Restore ist noch nicht vollständig implementiert. Inventar könnte unvollständig sein.")
+            DebugPrint("Restore ERROR: Gespeicherte Inventardaten für Spieler " .. playerId .. " haben nicht die erwartete Tabellenstruktur für Items.")
         end
-        playerOriginalInventory[playerId] = nil -- Gespeichertes Inventar nach Versuch löschen
+
+        playerOriginalInventory[playerId] = nil
     else
         DebugPrint("Restore WARNING: Kein Originalinventar für Spieler " .. playerId .. " zum Wiederherstellen gefunden.")
     end
