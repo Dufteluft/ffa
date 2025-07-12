@@ -3,86 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FFA Menu</title>
-    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Nosifier&display=swap" rel="stylesheet">
+    <title>Gaming UI Overlay</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div class="tab-container">
-        <div class="tab">Lobby Erstellen</div>
-        <div class="tab">Lobby</div>
-    </div>
-    <div id="zombie-background"></div>
-    <div id="blood-overlay"></div>
-    <div id="ffa-container" style="display: none;">
-        <div class="header">
-            <h1>Blutige Arena</h1>
-            <button id="closeButton" class="close-btn">X</button>
-        </div>
-        <div id="map-list-container">
-            <!-- Map-Karten werden hier per JS eingefügt -->
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-            <div class="placeholder-box"></div>
-        </div>
-        <div id="lobby-details" style="display: none;">
-            <h2>Lobby für <span id="lobby-map-name"></span></h2>
-            <p>Überlebende: <span id="lobby-current-players">0</span> / <span id="lobby-max-players">0</span></p>
-            <div id="player-list">
-                <!-- Spielerliste wird hier angezeigt -->
+    <div class="overlay-container">
+        <!-- Left Panel: FFA System -->
+        <div class="ffa-panel">
+            <div class="ffa-header">
+                <h1>FFA SYSTEM</h1>
+                <p class="subtitle">Here you can kill your neighbour or entity or damage, whatever</p>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <i class="fas fa-crosshairs icon-kills"></i>
+                        <div>
+                            <p>KILLS</p>
+                            <strong>24/6</strong>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-skull icon-deaths"></i>
+                        <div>
+                            <p>DEATHS</p>
+                            <strong>24/6</strong>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-chart-line icon-kd"></i>
+                        <div>
+                            <p>KD RATING</p>
+                            <strong>24/6</strong>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button id="leaveLobbyButton" class="join-btn">Lobby verlassen</button>
+            <div class="session-grid">
+                <!-- Session cards will be injected here by JS -->
+            </div>
         </div>
-    </div>
-    <div id="leaderboard-container">
-        <h2>Bestenliste</h2>
-        <div class="leaderboard-entry">
-            <span class="leaderboard-rank">1.</span>
-            <span class="leaderboard-name">ZombieSlayer</span>
-            <span class="leaderboard-score">1250</span>
-        </div>
-        <div class="leaderboard-entry">
-            <span class="leaderboard-rank">2.</span>
-            <span class="leaderboard-name">NightStalker</span>
-            <span class="leaderboard-score">1100</span>
-        </div>
-        <div class="leaderboard-entry">
-            <span class="leaderboard-rank">3.</span>
-            <span class="leaderboard-name">MadMax</span>
-            <span class="leaderboard-score">950</span>
-        </div>
-        <div class="leaderboard-entry">
-            <span class="leaderboard-rank">4.</span>
-            <span class="leaderboard-name">TheRipper</span>
-            <span class="leaderboard-score">800</span>
-        </div>
-        <div class="leaderboard-entry">
-            <span class="leaderboard-rank">5.</span>
-            <span class="leaderboard-name">SilentHill</span>
-            <span class="leaderboard-score">650</span>
-        </div>
-    </div>
-    <div id="player-stats-container">
-        <div class="stat-box">
-            <h3>Kills</h3>
-            <p>128</p>
-        </div>
-        <div class="stat-box">
-            <h3>Tode</h3>
-            <p>42</p>
-        </div>
-        <div class="stat-box">
-            <h3>K/D</h3>
-            <p>3.05</p>
+
+        <!-- Right Panel: Top of Players -->
+        <div class="leaderboard-panel">
+            <div class="leaderboard-header">
+                <h1>TOP OF PLAYERS</h1>
+                <p class="subtitle">Here you can kill your neighbour or entity or damage, whatever</p>
+            </div>
+            <div class="player-list">
+                <!-- Player entries will be injected here by JS -->
+            </div>
         </div>
     </div>
     <script src="script.js"></script>
