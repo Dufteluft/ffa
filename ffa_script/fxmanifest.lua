@@ -9,12 +9,14 @@ shared_script 'shared/config.lua'
 
 client_scripts {
     '@es_extended/locale.lua', -- Falls ESX Sprachdateien verwendet
-    'client/client.lua'
+    'client/client.lua',
+    'client/lobby_client.lua'
 }
 
 server_scripts {
     '@es_extended/locale.lua', -- Falls ESX Sprachdateien verwendet
-    'server/server.lua'
+    'server/server.lua',
+    'server/lobby_server.lua'
 }
 
 ui_page 'html/ui.html' -- Wird später für die UI verwendet

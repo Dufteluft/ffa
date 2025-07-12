@@ -1,26 +1,25 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: transparent; /* Wichtig für NUI */
+    background-color: transparent;
     margin: 0;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    overflow: hidden; /* Verhindert Scrollbalken auf der Body-Ebene */
+    overflow: hidden;
 }
 
 #ffa-container {
-    width: 500px;
+    width: 800px; /* Breiter für die neue Ansicht */
     padding: 20px;
     background-color: rgba(50, 50, 50, 0.9);
     border-radius: 10px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
     color: white;
-    text-align: center;
-    max-height: 80vh; /* Maximale Höhe, um Scrollen innerhalb des Containers zu ermöglichen */
     display: flex;
     flex-direction: column;
+    max-height: 80vh;
 }
 
 .header {
@@ -32,7 +31,7 @@ body {
 }
 
 h1 {
-    color: #ff8c00; /* Orange-ähnliche Farbe für den Titel */
+    color: #ff8c00;
     margin: 0;
     font-size: 1.8em;
 }
@@ -55,105 +54,156 @@ h1 {
     background-color: #c9302c;
 }
 
-#map-list-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    padding: 15px;
-    overflow-y: auto; /* Ermöglicht Scrollen, wenn viele Maps vorhanden sind */
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #444;
+    margin-bottom: 15px;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    color: #ccc;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 1.1em;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button.active {
+    color: #ff8c00;
+    border-bottom: 3px solid #ff8c00;
+}
+
+.tab-content {
+    display: none;
     flex-grow: 1;
 }
 
-.map-card {
-    background-color: #3f3f3f;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+.tab-content.active {
+    display: block;
 }
 
-.map-card img {
-    width: 100%;
-    max-width: 150px;
-    height: auto;
+#lobby-list-container {
+    overflow-y: auto;
+    max-height: 50vh; /* Höhe anpassen */
+}
+
+.lobby-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #3f3f3f;
+    padding: 10px;
     border-radius: 5px;
     margin-bottom: 10px;
-    background-color: #555; /* Hintergrund für den Fall, dass das Bild nicht lädt */
 }
 
-.map-card h3 {
-    margin: 5px 0;
+.lobby-name {
+    font-size: 1.2em;
     color: #ffae42;
-    font-size: 1.1em;
 }
 
-.map-card p {
-    font-size: 0.8em;
-    color: #ccc;
-    margin-bottom: 10px;
-    flex-grow: 1; /* Sorgt dafür, dass die Beschreibung den verfügbaren Platz einnimmt */
+.lobby-players {
+    font-size: 1em;
 }
 
-.map-card .players {
-    font-size: 0.9em;
-    color: #ddd;
-    margin-bottom: 10px;
-}
-
-.join-btn {
+.join-lobby-btn {
     padding: 8px 12px;
     background-color: #5cb85c;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 0.9em;
-    width: 80%;
 }
 
-.join-btn:hover {
+.join-lobby-btn:hover {
     background-color: #4cae4c;
 }
 
-#lobby-details {
-    padding: 15px;
-    border-top: 1px solid #444;
-    margin-top: 10px;
-}
-
-#lobby-details h2 {
-    color: #ffae42;
-}
-
-#player-list {
-    min-height: 50px;
-    background-color: #333;
-    border-radius: 5px;
+.bottom-stats {
+    display: flex;
+    justify-content: space-around;
     padding: 10px;
-    margin-bottom: 10px;
-    text-align: left;
+    border-top: 1px solid #444;
+    margin-top: 15px;
 }
 
-#player-list p {
-    margin: 2px 0;
-    font-size: 0.9em;
+#leaderboard {
+    width: 250px;
+    margin-left: 20px;
+    padding-left: 20px;
+    border-left: 1px solid #444;
+    overflow-y: auto;
 }
 
-#leaveLobbyButton {
-    background-color: #f0ad4e;
-}
-#leaveLobbyButton:hover {
-    background-color: #ec971f;
+#leaderboard h2 {
+    color: #ffae42;
+    text-align: center;
 }
 
-button { /* Allgemeiner Button-Style, falls nicht spezifischer */
-    padding: 10px 15px;
+#leaderboard-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#leaderboard-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid #555;
+}
+
+/* Styles for Create Lobby Tab */
+#create-lobby {
+    padding: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ccc;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #555;
+    background-color: #333;
+    color: white;
+}
+
+.form-group select[multiple] {
+    height: 150px;
+}
+
+.create-lobby-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #5cb85c;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 10px; /* Etwas weniger Margin als zuvor */
+    font-size: 1.1em;
+}
+
+.create-lobby-btn:hover {
+    background-color: #4cae4c;
+}
+
+#main-content {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.left-panel {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }

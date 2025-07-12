@@ -12,16 +12,52 @@
             <h1>FFA Auswahlmenü</h1>
             <button id="closeButton" class="close-btn">X</button>
         </div>
-        <div id="map-list-container">
-            <!-- Map-Karten werden hier per JS eingefügt -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="lobby-list">Lobbys</button>
+            <button class="tab-button" data-tab="create-lobby">Lobby erstellen</button>
         </div>
-        <div id="lobby-details" style="display: none;">
-            <h2>Lobby für <span id="lobby-map-name"></span></h2>
-            <p>Spieler: <span id="lobby-current-players">0</span> / <span id="lobby-max-players">0</span></p>
-            <div id="player-list">
-                <!-- Spielerliste wird hier angezeigt -->
+        <div id="main-content">
+            <div class="left-panel">
+                <div id="lobby-list" class="tab-content active">
+                    <div id="lobby-list-container">
+                        <!-- Lobbys werden hier per JS eingefügt -->
+                    </div>
+                    <div class="bottom-stats">
+                        <p>K/D: <span id="kd-ratio">1.5</span></p>
+                        <p>Kills: <span id="kills">150</span></p>
+                        <p>Tode: <span id="deaths">100</span></p>
+                    </div>
+                </div>
+                <div id="create-lobby" class="tab-content">
+                    <div class="form-group">
+                        <label for="lobby-name">Lobby Name</label>
+                        <input type="text" id="lobby-name" placeholder="Name der Lobby">
+                    </div>
+                    <div class="form-group">
+                        <label for="lobby-password">Passwort (optional)</label>
+                        <input type="password" id="lobby-password" placeholder="Passwort">
+                    </div>
+                    <div class="form-group">
+                        <label for="lobby-map">Map</label>
+                        <select id="lobby-map">
+                            <!-- Maps werden hier per JS eingefügt -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="lobby-weapons">Waffen</label>
+                        <select id="lobby-weapons" multiple>
+                            <!-- Waffen werden hier per JS eingefügt -->
+                        </select>
+                    </div>
+                    <button id="create-lobby-btn" class="create-lobby-btn">Lobby erstellen</button>
+                </div>
             </div>
-            <button id="leaveLobbyButton">Lobby verlassen</button>
+            <div id="leaderboard">
+                <h2>Rangliste</h2>
+                <ol id="leaderboard-list">
+                    <!-- Rangliste wird hier per JS eingefügt -->
+                </ol>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>

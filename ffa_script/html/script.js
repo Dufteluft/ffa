@@ -1,23 +1,19 @@
 document.addEventListener('DOMContentLoaded', function () {
     const ffaContainer = document.getElementById('ffa-container');
     const closeButton = document.getElementById('closeButton');
-    const mapListContainer = document.getElementById('map-list-container');
-    const lobbyDetailsView = document.getElementById('lobby-details');
-    const lobbyMapName = document.getElementById('lobby-map-name');
-    const lobbyCurrentPlayers = document.getElementById('lobby-current-players');
-    const lobbyMaxPlayers = document.getElementById('lobby-max-players');
-    const playerListDiv = document.getElementById('player-list');
-    const leaveLobbyButton = document.getElementById('leaveLobbyButton');
+    const lobbyListContainer = document.getElementById('lobby-list-container');
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const kdRatio = document.getElementById('kd-ratio');
+    const kills = document.getElementById('kills');
+    const deaths = document.getElementById('deaths');
 
-    let currentMapData = []; // Um die Map-Daten lokal zu speichern
-    let currentlyDisplayedLobbyMapId = null; // Welche Lobby wird gerade angezeigt?
+    // Tab-Buttons und -Inhalte
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-    // Funktion zum Schließen des Menüs und Senden der NUI-Nachricht an Lua
+    // Funktion zum Schließen des Menüs
     function closeMenu() {
         ffaContainer.style.display = 'none';
-        mapListContainer.style.display = 'grid'; // Map-Liste wieder anzeigen, falls Lobby offen war
-        lobbyDetailsView.style.display = 'none'; // Lobby-Ansicht ausblenden
-        currentlyDisplayedLobbyMapId = null;
         fetch(`https://${GetParentResourceName()}/closeMenu`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json; charset=UTF-8' },
@@ -25,105 +21,126 @@ document.addEventListener('DOMContentLoaded', function () {
         }).catch(err => console.error("Error closing menu:", err));
     }
 
-    function joinMapLobby(mapId) {
-        console.log("Versuche Lobby beizutreten für Map:", mapId);
-        fetch(`https://${GetParentResourceName()}/joinLobby`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-            body: JSON.stringify({ mapId: mapId }),
-        }).then(response => response.text()).then(data => {
-            console.log('joinLobby response:', data);
-            // UI-Wechsel passiert jetzt durch 'updateLobbyView' oder eine dedizierte Bestätigung
-        }).catch(err => console.error("Error joining lobby:", err));
-
-        // Optimistisch die Lobby-Ansicht vorbereiten oder auf Bestätigung warten
-        const selectedMap = currentMapData.find(m => m.id === mapId);
-        if (selectedMap) {
-            mapListContainer.style.display = 'none';
-            lobbyDetailsView.style.display = 'block';
-            currentlyDisplayedLobbyMapId = mapId;
-            lobbyMapName.textContent = selectedMap.displayName;
-            // Spielerzahlen werden durch updateLobbyView aktualisiert
-            lobbyMaxPlayers.textContent = selectedMap.maxPlayers;
-            playerListDiv.innerHTML = '<p>Lobby wird beigetreten...</p>';
-        }
-    }
-
-    function leaveLobby() {
-        console.log("Verlasse Lobby");
-        fetch(`https://${GetParentResourceName()}/leaveLobby`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-            body: JSON.stringify({}),
-        }).catch(err => console.error("Error leaving lobby:", err));
-
-        mapListContainer.style.display = 'grid';
-        lobbyDetailsView.style.display = 'none';
-        currentlyDisplayedLobbyMapId = null;
-    }
-
-
-    function displayMaps(maps) {
-        currentMapData = maps;
-        mapListContainer.innerHTML = '';
-
-        if (!maps || maps.length === 0) {
-            mapListContainer.innerHTML = '<p>Keine FFA-Maps verfügbar.</p>';
+    // Funktion zum Anzeigen von Lobbys
+    function displayLobbies(lobbies) {
+        lobbyListContainer.innerHTML = '';
+        if (!lobbies || lobbies.length === 0) {
+            lobbyListContainer.innerHTML = '<p>Keine Lobbys verfügbar.</p>';
             return;
         }
 
-        maps.forEach(map => {
-            const card = document.createElement('div');
-            card.classList.add('map-card');
-            card.dataset.mapId = map.id; // Um die Karte später zu finden und zu aktualisieren
-
-            const thumbnail = document.createElement('img');
-            thumbnail.src = map.thumbnail || 'https://via.placeholder.com/150/cccccc/000000?Text=No+Image';
-            thumbnail.alt = map.displayName;
-
-            const title = document.createElement('h3');
-            title.textContent = map.displayName;
-
-            const description = document.createElement('p');
-            description.textContent = map.description;
-
-            const playersP = document.createElement('p');
-            playersP.classList.add('players');
-            playersP.textContent = `Spieler: ${map.currentPlayers || 0} / ${map.maxPlayers || 'N/A'}`;
-
-            const joinButton = document.createElement('button');
-            joinButton.classList.add('join-btn');
-            joinButton.textContent = 'Lobby beitreten';
-            joinButton.onclick = () => joinMapLobby(map.id);
-
-            card.appendChild(thumbnail);
-            card.appendChild(title);
-            card.appendChild(description);
-            card.appendChild(playersP); // Geändertes Element
-            card.appendChild(joinButton);
-            mapListContainer.appendChild(card);
+        lobbies.forEach(lobby => {
+            const lobbyItem = document.createElement('div');
+            lobbyItem.classList.add('lobby-item');
+            lobbyItem.innerHTML = `
+                <div class="lobby-name">${lobby.name}</div>
+                <div class="lobby-players">${lobby.players} / ${lobby.maxPlayers}</div>
+                <button class="join-lobby-btn" data-lobby-id="${lobby.id}">Beitreten</button>
+            `;
+            lobbyListContainer.appendChild(lobbyItem);
         });
     }
 
-    function updateMapCardPlayerCount(mapId, currentPlayers) {
-        const mapCard = mapListContainer.querySelector(`.map-card[data-map-id="${mapId}"]`);
-        if (mapCard) {
-            const playersElement = mapCard.querySelector('.players');
-            const mapData = currentMapData.find(m => m.id === mapId);
-            if (playersElement && mapData) {
-                playersElement.textContent = `Spieler: ${currentPlayers} / ${mapData.maxPlayers || 'N/A'}`;
-            }
+    // Funktion zum Anzeigen der Rangliste
+    function displayLeaderboard(leaderboard) {
+        leaderboardList.innerHTML = '';
+        if (!leaderboard || leaderboard.length === 0) {
+            return;
         }
+
+        leaderboard.forEach(player => {
+            const li = document.createElement('li');
+            li.textContent = `${player.name} - K/D: ${player.kd}`;
+            leaderboardList.appendChild(li);
+        });
     }
+
+    // Event Listener für Tab-Buttons
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            const tab = button.getAttribute('data-tab');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === tab) {
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
 
     // Event Listener für den Schließen-Button
     if (closeButton) {
         closeButton.addEventListener('click', closeMenu);
     }
 
-    // Event Listener für den "Lobby verlassen" Button
-    if (leaveLobbyButton) {
-        leaveLobbyButton.addEventListener('click', leaveLobby);
+    // Funktion zum Befüllen der Auswahlfelder für die Lobby-Erstellung
+    function populateCreateLobbyOptions() {
+        const mapSelect = document.getElementById('lobby-map');
+        const weaponsSelect = document.getElementById('lobby-weapons');
+
+        mapSelect.innerHTML = '';
+        weaponsSelect.innerHTML = '';
+
+        // Dummy-Daten - diese sollten von der Lua-Seite kommen
+        const maps = ['Standard Map 1', 'Standard Map 2', 'Standard Map 3', 'Custom Map A'];
+        const weapons = ['Pistol', 'SMG', 'Assault Rifle', 'Sniper Rifle', 'Shotgun'];
+
+        maps.forEach(map => {
+            const option = document.createElement('option');
+            option.value = map;
+            option.textContent = map;
+            mapSelect.appendChild(option);
+        });
+
+        weapons.forEach(weapon => {
+            const option = document.createElement('option');
+            option.value = weapon;
+            option.textContent = weapon;
+            weaponsSelect.appendChild(option);
+        });
+    }
+
+    // Event Listener für den "Lobby erstellen"-Button
+    const createLobbyBtn = document.getElementById('create-lobby-btn');
+    if (createLobbyBtn) {
+        createLobbyBtn.addEventListener('click', () => {
+            const lobbyName = document.getElementById('lobby-name').value;
+            const lobbyPassword = document.getElementById('lobby-password').value;
+            const lobbyMap = document.getElementById('lobby-map').value;
+            const selectedWeapons = [...document.getElementById('lobby-weapons').options]
+                                      .filter(option => option.selected)
+                                      .map(option => option.value);
+
+            if (!lobbyName) {
+                alert("Bitte einen Lobby-Namen eingeben.");
+                return;
+            }
+
+            const lobbyData = {
+                name: lobbyName,
+                password: lobbyPassword,
+                map: lobbyMap,
+                weapons: selectedWeapons,
+            };
+
+            console.log("Erstelle Lobby mit folgenden Daten:", lobbyData);
+            // Sende die Daten an die Lua-Seite
+            fetch(`https://${GetParentResourceName()}/createLobby`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                body: JSON.stringify(lobbyData),
+            }).catch(err => console.error("Error creating lobby:", err));
+
+            // Optional: Nach dem Erstellen zur Lobby-Liste wechseln
+            // Dies kann auch serverseitig gesteuert werden, indem eine neue Lobby-Liste gesendet wird
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.tab-button[data-tab="lobby-list"]').classList.add('active');
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById('lobby-list').classList.add('active');
+        });
     }
 
     // Event Listener für Nachrichten von Lua (client.lua)
@@ -131,41 +148,28 @@ document.addEventListener('DOMContentLoaded', function () {
         const item = event.data;
         if (item.action === 'openMenu') {
             ffaContainer.style.display = 'flex';
-            if (item.maps) {
-                displayMaps(item.maps);
-            }
-            mapListContainer.style.display = 'grid';
-            lobbyDetailsView.style.display = 'none';
-            currentlyDisplayedLobbyMapId = null;
+            // Dummy-Daten für die UI
+            const dummyLobbies = [
+                { id: 1, name: 'Standard Map 1', players: 5, maxPlayers: 10 },
+                { id: 2, name: 'Standard Map 2', players: 8, maxPlayers: 10 },
+                { id: 3, name: 'Standard Map 3', players: 2, maxPlayers: 10 },
+                { id: 4, name: 'Custom Lobby 1', players: 1, maxPlayers: 8 },
+            ];
+            const dummyLeaderboard = [
+                { name: 'Player1', kd: 2.5 },
+                { name: 'Player2', kd: 2.1 },
+                { name: 'Player3', kd: 1.8 },
+            ];
+            displayLobbies(dummyLobbies);
+            displayLeaderboard(dummyLeaderboard);
+            kdRatio.textContent = '1.5';
+            kills.textContent = '150';
+            deaths.textContent = '100';
+
+            // Befülle die "Lobby erstellen"-Optionen
+            populateCreateLobbyOptions();
         } else if (item.action === 'closeMenu') {
             closeMenu();
-        } else if (item.action === 'updateLobbyView') {
-            // Aktualisiert die Spielerzahl auf der Map-Karte
-            updateMapCardPlayerCount(item.mapId, item.currentPlayers);
-
-            // Aktualisiert die detaillierte Lobby-Ansicht, WENN sie für diese Map offen ist
-            if (currentlyDisplayedLobbyMapId === item.mapId && lobbyDetailsView.style.display === 'block') {
-                const map = currentMapData.find(m => m.id === item.mapId);
-                if (map) { // Stellen sicher, dass die Map-Daten noch vorhanden sind
-                    lobbyMapName.textContent = map.displayName; // Bleibt gleich, aber zur Sicherheit
-                    lobbyCurrentPlayers.textContent = item.currentPlayers;
-                    lobbyMaxPlayers.textContent = map.maxPlayers; // Bleibt gleich
-                    playerListDiv.innerHTML = ''; // Leeren
-                    if (item.players && item.players.length > 0) {
-                        item.players.forEach(playerName => {
-                            const p = document.createElement('p');
-                            p.textContent = playerName;
-                            playerListDiv.appendChild(p);
-                        });
-                    } else {
-                        playerListDiv.innerHTML = '<p>Keine Spieler in der Lobby.</p>';
-                    }
-                }
-            }
-        } else if (item.action === 'updateMapPlayerCounts') {
-            // Wird verwendet, um nur die Spielerzahlen auf den Map-Karten zu aktualisieren
-            // (nützlich, wenn der Spieler nicht in dieser Lobby-Ansicht ist)
-            updateMapCardPlayerCount(item.mapId, item.currentPlayers);
         }
     });
 
