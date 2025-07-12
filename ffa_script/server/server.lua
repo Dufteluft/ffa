@@ -23,7 +23,8 @@ local activeLobbies = {}
 local playerLobbyMap = {}
 local playerCurrentFFALoadout = {}
 local playerLastLocation = {}
-local playerOriginalInventory = {}
+-- local playerOriginalInventory = {} -- This will be handled by ox_inventory directly
+local playersWithConfiscatedInventories = {} -- Track players whose inventories were confiscated by FFA script
 
 local function getMapConfigById(mapId)
     for _, mapConfig in ipairs(Config.Maps) do
@@ -35,101 +36,48 @@ local function getMapConfigById(mapId)
 end
 
 local function StoreAndClearPlayerInventoryForFFA(playerId, mapWeapons)
-    DebugPrint("Store/Clear INV: Aufgerufen für Spieler " .. playerId)
+    DebugPrint("FFA INV: Confiscate - Aufgerufen für Spieler " .. playerId)
     if not exports.ox_inventory then
-        DebugPrint("Store/Clear INV ERROR: ox_inventory Export nicht gefunden.")
+        DebugPrint("FFA INV: Confiscate ERROR - ox_inventory Export nicht gefunden.")
         return false
     end
 
-    playerOriginalInventory[playerId] = exports.ox_inventory:GetInventory(playerId)
-    if playerOriginalInventory[playerId] then
-        DebugPrint("Store/Clear INV: Originalinventar für Spieler " .. playerId .. " gespeichert. Rohdaten: " .. json.encode(playerOriginalInventory[playerId]))
+    -- Die mapWeapons sind für diese Funktion nicht mehr direkt relevant, da wir alles konfiszieren.
+    -- Wir behalten den Parameter für Konsistenz mit dem aufrufenden Code, aber verwenden ihn nicht.
 
-        local itemsActuallyRemoved = 0
-        -- Annahme: playerOriginalInventory[playerId].items ist eine Tabelle, bei der die Schlüssel Slot-Nummern sind
-        -- und die Werte die Item-Daten-Tabellen sind.
-        if playerOriginalInventory[playerId].items and type(playerOriginalInventory[playerId].items) == 'table' then
-            DebugPrint("Store/Clear INV: Iteriere durch Originalinventar von Spieler " .. playerId .. " zum Entfernen von Waffen...")
+    local success, message = exports.ox_inventory:ConfiscateInventory(playerId)
 
-            local weaponsToRemoveFromOriginal = {}
-            for slot, itemData in pairs(playerOriginalInventory[playerId].items) do
-                if itemData and itemData.name and string.find(itemData.name, "weapon_") then
-                    DebugPrint("Store/Clear INV: Waffe '" .. itemData.name .. "' (x" .. itemData.amount .. ") in Slot " .. slot .. " im Originalinventar gefunden zum Entfernen.")
-                    -- Wichtig: Hier die Menge (itemData.amount) speichern, da Waffen oft nur Menge 1 haben, aber andere Items nicht.
-                    table.insert(weaponsToRemoveFromOriginal, {name = itemData.name, amount = itemData.amount, slot = slot, metadata = itemData.metadata})
-                end
-            end
-
-            if #weaponsToRemoveFromOriginal > 0 then
-                DebugPrint("Store/Clear INV: " .. #weaponsToRemoveFromOriginal .. " Waffeneinträge werden aus dem aktiven Inventar von Spieler " .. playerId .. " entfernt.")
-                for _, weaponToRemove in ipairs(weaponsToRemoveFromOriginal) do
-                    DebugPrint("Store/Clear INV: Versuche zu entfernen: " .. json.encode(weaponToRemove))
-                    -- Hier ist es wichtig, dass RemoveItem mit den korrekten Parametern aufgerufen wird,
-                    -- insbesondere wenn Slots oder spezifische Metadaten beim Entfernen eine Rolle spielen.
-                    -- Für Waffen reicht oft Name und Menge.
-                    local success, removedCount = exports.ox_inventory:RemoveItem(playerId, weaponToRemove.name, weaponToRemove.amount, weaponToRemove.metadata, weaponToRemove.slot)
-                    if success and removedCount > 0 then
-                        itemsActuallyRemoved = itemsActuallyRemoved + removedCount
-                        DebugPrint("Store/Clear INV: Waffe " .. weaponToRemove.name .. " (x" .. weaponToRemove.amount .. ") erfolgreich aus Slot " .. weaponToRemove.slot .. " entfernt.")
-                    else
-                        DebugPrint("Store/Clear INV WARNING: Konnte Waffe " .. weaponToRemove.name .. " aus Slot " .. weaponToRemove.slot .. " nicht entfernen. Erfolg: " .. tostring(success) .. ", Anzahl: " .. tostring(removedCount))
-                    end
-                end
-                DebugPrint("Store/Clear INV: " .. itemsActuallyRemoved .. " Waffen-Stacks aus Originalinventar von Spieler " .. playerId .. " entfernt.")
-            else
-                DebugPrint("Store/Clear INV: Keine Waffen im Originalinventar von Spieler " .. playerId .. " gefunden, die 'weapon_' im Namen haben.")
-            end
-        else
-            DebugPrint("Store/Clear INV: Originalinventar von Spieler " .. playerId .. " hat keine 'items' Tabelle oder ist keine Tabelle. Inventarstruktur: " .. json.encode(playerOriginalInventory[playerId]))
-        end
+    if success then
+        playersWithConfiscatedInventories[playerId] = true
+        DebugPrint("FFA INV: Confiscate - Inventar für Spieler " .. playerId .. " erfolgreich konfisziert. Nachricht: " .. (message or "Keine"))
+        return true
     else
-        DebugPrint("Store/Clear INV WARNING: Konnte Originalinventar für Spieler " .. playerId .. " nicht abrufen. Inventar wird nicht geleert.")
+        DebugPrint("FFA INV: Confiscate WARNING - Konnte Inventar für Spieler " .. playerId .. " nicht konfiszieren. Nachricht: " .. (message or "Keine"))
+        -- Wichtig: Wenn die Konfiszierung fehlschlägt, sollten wir den Spieler nicht ins FFA lassen,
+        -- da sein Inventar nicht sicher ist. Dies wird im aufrufenden Event 'ffa:joinLobby' behandelt.
+        return false
     end
-    DebugPrint("Store/Clear INV: Prozess für Spieler " .. playerId .. " abgeschlossen.")
-    return true
 end
 
 local function RestorePlayerOriginalInventory(playerId)
-    DebugPrint("Restore INV: Aufgerufen für Spieler " .. playerId)
+    DebugPrint("FFA INV: Return - Aufgerufen für Spieler " .. playerId)
     if not exports.ox_inventory then
-        DebugPrint("Restore INV ERROR: ox_inventory Export nicht gefunden."); return
+        DebugPrint("FFA INV: Return ERROR - ox_inventory Export nicht gefunden.")
+        return
     end
 
-    if playerOriginalInventory[playerId] then
-        DebugPrint("Restore INV: Versuche Originalinventar für Spieler " .. playerId .. " wiederherzustellen. Gespeichertes Inventar: " .. json.encode(playerOriginalInventory[playerId]))
-
-        local inventoryData = playerOriginalInventory[playerId]
-        -- Annahme: inventoryData.items ist die Tabelle mit Slot als Key und ItemData als Value
-        local itemsToRestore = inventoryData.items
-
-        if type(itemsToRestore) == "table" then
-            local itemCount = 0
-            for _ in pairs(itemsToRestore) do itemCount = itemCount + 1 end
-            DebugPrint("Restore INV: " .. itemCount .. " Item-Slots/Einträge im gespeicherten Inventar gefunden für Spieler " .. playerId)
-
-            for slot, itemData in pairs(itemsToRestore) do
-                if type(itemData) == 'table' and itemData.name and itemData.amount then
-                    local metadata = itemData.metadata or {}
-                    -- Wichtig: ox_inventory:AddItem fügt normalerweise in den nächsten freien Slot hinzu, wenn der angegebene Slot belegt ist
-                    -- oder der Slot-Parameter anders interpretiert wird. Für eine exakte Wiederherstellung wäre SetInventory ideal.
-                    DebugPrint("Restore INV: Versuche Item " .. itemData.name .. " (x" .. itemData.amount .. ") in Slot " .. tostring(itemData.slot) .. " für Spieler " .. playerId .. " wiederherzustellen. Meta: " .. json.encode(metadata))
-                    local success, addedItem = exports.ox_inventory:AddItem(playerId, itemData.name, itemData.amount, metadata, itemData.slot)
-                    if success and addedItem then
-                        DebugPrint("Restore INV: Item " .. itemData.name .. " (x" .. itemData.amount .. ") für Spieler " .. playerId .. " in Slot " .. tostring(itemData.slot) .. " (oder nächster freier) erfolgreich wiederhergestellt.")
-                    else
-                        DebugPrint("Restore INV WARNING: Konnte Item " .. itemData.name .. " (x" .. itemData.amount .. ") für Spieler " .. playerId .. " nicht wiederherstellen. Erfolg: " .. tostring(success) .. " ItemData: " .. json.encode(addedItem))
-                    end
-                else
-                    DebugPrint("Restore INV WARNING: Ungültige Item-Daten im gespeicherten Inventar für Spieler " .. playerId .. " bei Slot/Index " .. tostring(slot) .. ": " .. json.encode(itemData))
-                end
-            end
-            DebugPrint("Restore INV: Manueller Wiederherstellungsprozess für Spieler " .. playerId .. " abgeschlossen.")
+    if playersWithConfiscatedInventories[playerId] then
+        local success, message = exports.ox_inventory:ReturnInventory(playerId)
+        if success then
+            DebugPrint("FFA INV: Return - Inventar für Spieler " .. playerId .. " erfolgreich zurückgegeben. Nachricht: " .. (message or "Keine"))
+            playersWithConfiscatedInventories[playerId] = nil -- Wichtig: Eintrag entfernen
         else
-            DebugPrint("Restore INV ERROR: Gespeicherte Inventardaten (items) für Spieler " .. playerId .. " haben nicht die erwartete Tabellenstruktur. Daten: " .. json.encode(inventoryData))
+            DebugPrint("FFA INV: Return WARNING - Konnte Inventar für Spieler " .. playerId .. " nicht zurückgeben. Nachricht: " .. (message or "Keine"))
+            -- Optional: Was soll passieren, wenn die Rückgabe fehlschlägt?
+            -- Fürs Erste loggen wir nur den Fehler. ox_inventory sollte das Inventar behalten, wenn es nicht zurückgegeben werden kann.
         end
-        playerOriginalInventory[playerId] = nil
     else
-        DebugPrint("Restore INV WARNING: Kein Originalinventar für Spieler " .. playerId .. " zum Wiederherstellen gefunden.")
+        DebugPrint("FFA INV: Return INFO - Kein durch FFA-Skript konfisziertes Inventar für Spieler " .. playerId .. " zum Wiederherstellen gefunden (Eintrag nicht in playersWithConfiscatedInventories).")
     end
 end
 
