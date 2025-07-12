@@ -51,7 +51,7 @@ body {
 }
 
 #leaderboard-container h2 {
-    color: #FFD700; /* Gold */
+    color: #FFFFFF; /* Weiß */
     text-align: center;
     margin-top: 0;
 }
@@ -74,7 +74,7 @@ body {
 
 .leaderboard-entry .rank {
     font-weight: bold;
-    color: #FFD700; /* Gold */
+    color: #FFFFFF; /* Weiß */
 }
 
 #stats-container {
@@ -90,7 +90,7 @@ body {
     height: 100px;
     border-radius: 50%;
     background-color: rgba(20, 20, 20, 0.9); /* Dunkles Grau/Schwarz */
-    border: 2px solid #FFD700; /* Goldener Rand */
+    border: 2px solid #FF0000; /* Roter Rand */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -102,7 +102,7 @@ body {
 .stat-circle p {
     margin: 0;
     font-size: 1.1em;
-    color: #FFD700; /* Gold */
+    color: #FFFFFF; /* Weiß */
 }
 
 .stat-circle span {
@@ -119,7 +119,7 @@ body {
 }
 
 h1 {
-    color: #FFD700; /* Gold */
+    color: #FFFFFF; /* Weiß */
     margin: 0;
     font-size: 1.8em;
 }
@@ -127,7 +127,7 @@ h1 {
 .close-btn {
     background-color: #FF0000; /* Rot */
     color: white;
-    border: 1px solid #FFD700; /* Goldener Rand */
+    border: 1px solid #FFFFFF; /* Weißer Rand */
     border-radius: 50%;
     width: 30px;
     height: 30px;
@@ -180,7 +180,7 @@ h1 {
 
 .map-card h3 {
     margin: 5px 0;
-    color: #FFD700; /* Gold */
+    color: #FFFFFF; /* Weiß */
     font-size: 1.1em;
 }
 
@@ -201,7 +201,7 @@ h1 {
     padding: 8px 12px;
     background-color: #FF0000; /* Rot */
     color: white;
-    border: 1px solid #FFD700; /* Gold */
+    border: 1px solid #FFFFFF; /* Weiß */
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9em;
@@ -219,7 +219,7 @@ h1 {
 }
 
 #lobby-details h2 {
-    color: #FFD700; /* Gold */
+    color: #FFFFFF; /* Weiß */
 }
 
 #player-list {
@@ -238,7 +238,7 @@ h1 {
 
 #leaveLobbyButton {
     background-color: #8B0000; /* Dunkelrot */
-    border: 1px solid #FFD700; /* Gold */
+    border: 1px solid #FFFFFF; /* Weiß */
 }
 #leaveLobbyButton:hover {
     background-color: #b30000; /* Dunkelrot */
