@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Funktion zum Schließen des Menüs und Senden der NUI-Nachricht an Lua
     function closeMenu() {
         ffaContainer.style.display = 'none';
-        mapListContainer.style.display = 'grid'; // Map-Liste wieder anzeigen, falls Lobby offen war
+        mapListContainer.style.display = 'flex'; // Map-Liste wieder anzeigen, falls Lobby offen war
         lobbyDetailsView.style.display = 'none'; // Lobby-Ansicht ausblenden
         currentlyDisplayedLobbyMapId = null;
         fetch(`https://${GetParentResourceName()}/closeMenu`, {
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
             body: JSON.stringify({}),
         }).catch(err => console.error("Error leaving lobby:", err));
 
-        mapListContainer.style.display = 'grid';
+        mapListContainer.style.display = 'flex';
         lobbyDetailsView.style.display = 'none';
         currentlyDisplayedLobbyMapId = null;
     }
@@ -75,17 +75,23 @@ document.addEventListener('DOMContentLoaded', function () {
         maps.forEach(map => {
             const card = document.createElement('div');
             card.classList.add('map-card');
-            card.dataset.mapId = map.id; // Um die Karte später zu finden und zu aktualisieren
+            card.dataset.mapId = map.id;
 
             const thumbnail = document.createElement('img');
             thumbnail.src = map.thumbnail || 'https://via.placeholder.com/150/cccccc/000000?Text=No+Image';
             thumbnail.alt = map.displayName;
+
+            const mapDetails = document.createElement('div');
+            mapDetails.classList.add('map-details');
 
             const title = document.createElement('h3');
             title.textContent = map.displayName;
 
             const description = document.createElement('p');
             description.textContent = map.description;
+
+            const mapFooter = document.createElement('div');
+            mapFooter.classList.add('map-footer');
 
             const playersP = document.createElement('p');
             playersP.classList.add('players');
@@ -96,11 +102,16 @@ document.addEventListener('DOMContentLoaded', function () {
             joinButton.textContent = 'Lobby beitreten';
             joinButton.onclick = () => joinMapLobby(map.id);
 
+            mapFooter.appendChild(playersP);
+            mapFooter.appendChild(joinButton);
+
+            mapDetails.appendChild(title);
+            mapDetails.appendChild(description);
+            mapDetails.appendChild(mapFooter);
+
             card.appendChild(thumbnail);
-            card.appendChild(title);
-            card.appendChild(description);
-            card.appendChild(playersP); // Geändertes Element
-            card.appendChild(joinButton);
+            card.appendChild(mapDetails);
+
             mapListContainer.appendChild(card);
         });
     }
@@ -134,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (item.maps) {
                 displayMaps(item.maps);
             }
-            mapListContainer.style.display = 'grid';
+            mapListContainer.style.display = 'flex';
             lobbyDetailsView.style.display = 'none';
             currentlyDisplayedLobbyMapId = null;
         } else if (item.action === 'closeMenu') {

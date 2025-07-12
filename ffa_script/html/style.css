@@ -20,7 +20,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
     z-index: -1;
 }
 
@@ -31,7 +31,7 @@ body {
     width: 100%;
     height: 100%;
     background: url(https://i.imgur.com/v2C0iNJ.png) repeat;
-    opacity: 0.2;
+    opacity: 0.1;
     animation: bloodFlow 20s linear infinite;
     z-index: 0;
 }
@@ -113,10 +113,10 @@ h1 {
 }
 
 #map-list-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 25px;
-    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
     overflow-y: auto;
     flex-grow: 1;
 }
@@ -125,28 +125,26 @@ h1 {
     background: linear-gradient(145deg, rgba(30, 0, 0, 0.8), rgba(50, 10, 10, 0.8));
     border: 2px solid #7B0000;
     border-radius: 15px;
-    padding: 20px;
+    padding: 15px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.7), inset 0 0 8px rgba(123,0,0,0.6);
     display: flex;
-    flex-direction: column;
     align-items: center;
-    text-align: center;
     transition: transform 0.4s, box-shadow 0.4s;
     position: relative;
     overflow: hidden;
 }
 
 .map-card:hover {
-    transform: translateY(-10px) scale(1.03);
+    transform: translateX(10px) scale(1.02);
     box-shadow: 0 12px 24px rgba(123,0,0,0.9), inset 0 0 12px rgba(123,0,0,0.8);
 }
 
 .map-card img {
-    width: 100%;
-    height: 140px;
+    width: 150px;
+    height: 100px;
     object-fit: cover;
     border-radius: 10px;
-    margin-bottom: 15px;
+    margin-right: 15px;
     border: 3px solid #7B0000;
     filter: grayscale(60%) sepia(40%) brightness(0.9);
     transition: filter 0.3s;
@@ -156,36 +154,44 @@ h1 {
     filter: grayscale(30%) sepia(20%) brightness(1.1);
 }
 
-.map-card h3 {
-    margin: 10px 0;
+.map-details {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.map-details h3 {
+    margin: 0 0 5px 0;
     color: #E53935;
-    font-size: 1.8em;
+    font-size: 1.6em;
     text-shadow: 2px 2px 3px #000;
 }
 
-.map-card p {
-    font-size: 1em;
+.map-details p {
+    font-size: 0.9em;
     color: #bbb;
-    margin-bottom: 20px;
-    flex-grow: 1;
+    margin: 0 0 10px 0;
 }
 
-.map-card .players {
+.map-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.map-footer .players {
     font-size: 1.1em;
     color: #e0e0e0;
-    margin-bottom: 20px;
     font-weight: bold;
 }
 
 .join-btn {
-    padding: 12px 20px;
+    padding: 10px 15px;
     background: linear-gradient(145deg, #7B0000, #E53935);
     color: white;
     border: 2px solid #f5f5f5;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 1.2em;
-    width: 100%;
+    font-size: 1em;
     text-transform: uppercase;
     letter-spacing: 2px;
     box-shadow: 0 4px 8px #000;
@@ -292,4 +298,123 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #E53935;
+}
+
+/* Tab container styling */
+.tab-container {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    z-index: 100;
+}
+
+.tab {
+    background: linear-gradient(145deg, #7B0000, #E53935);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    font-family: 'Creepster', cursive;
+    font-size: 1.2em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border: 2px solid #f5f5f5;
+    box-shadow: 0 4px 8px #000;
+    transition: all 0.3s ease;
+}
+
+.tab:hover {
+    background: linear-gradient(145deg, #E53935, #7B0000);
+    box-shadow: 0 6px 12px #ff0000;
+    transform: translateY(-5px);
+}
+
+/* Leaderboard styling */
+#leaderboard-container {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    width: 250px;
+    background-color: rgba(15, 15, 15, 0.9);
+    border: 3px solid #7B0000;
+    border-radius: 20px;
+    box-shadow: 0 0 30px rgba(123, 0, 0, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.6);
+    color: #e0e0e0;
+    padding: 20px;
+    z-index: 50;
+    backdrop-filter: blur(3px);
+}
+
+#leaderboard-container h2 {
+    font-family: 'Nosifier', cursive;
+    color: #E53935;
+    text-align: center;
+    font-size: 2em;
+    text-shadow: 2px 2px 4px #000;
+    margin-bottom: 20px;
+}
+
+.leaderboard-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed #7B0000;
+}
+
+.leaderboard-entry:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-rank {
+    font-weight: bold;
+    color: #E53935;
+}
+
+.leaderboard-name {
+    flex-grow: 1;
+    margin-left: 10px;
+}
+
+.leaderboard-score {
+    font-weight: bold;
+}
+
+/* Player stats styling */
+#player-stats-container {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 50;
+}
+
+.stat-box {
+    background-color: rgba(15, 15, 15, 0.9);
+    border: 3px solid #7B0000;
+    border-radius: 20px;
+    box-shadow: 0 0 20px rgba(123, 0, 0, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.6);
+    color: #e0e0e0;
+    padding: 15px 25px;
+    text-align: center;
+    backdrop-filter: blur(3px);
+}
+
+.stat-box h3 {
+    font-family: 'Nosifier', cursive;
+    color: #E53935;
+    font-size: 1.5em;
+    text-shadow: 2px 2px 4px #000;
+    margin: 0 0 10px 0;
+}
+
+.stat-box p {
+    font-size: 1.8em;
+    font-weight: bold;
+    margin: 0;
+    color: #fff;
 }

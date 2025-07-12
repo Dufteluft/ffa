@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="tab-container">
+        <div class="tab">Lobby Erstellen</div>
+    </div>
     <div id="zombie-background"></div>
     <div id="blood-overlay"></div>
     <div id="ffa-container" style="display: none;">
@@ -25,6 +28,48 @@
                 <!-- Spielerliste wird hier angezeigt -->
             </div>
             <button id="leaveLobbyButton" class="join-btn">Lobby verlassen</button>
+        </div>
+    </div>
+    <div id="leaderboard-container">
+        <h2>Bestenliste</h2>
+        <div class="leaderboard-entry">
+            <span class="leaderboard-rank">1.</span>
+            <span class="leaderboard-name">ZombieSlayer</span>
+            <span class="leaderboard-score">1250</span>
+        </div>
+        <div class="leaderboard-entry">
+            <span class="leaderboard-rank">2.</span>
+            <span class="leaderboard-name">NightStalker</span>
+            <span class="leaderboard-score">1100</span>
+        </div>
+        <div class="leaderboard-entry">
+            <span class="leaderboard-rank">3.</span>
+            <span class="leaderboard-name">MadMax</span>
+            <span class="leaderboard-score">950</span>
+        </div>
+        <div class="leaderboard-entry">
+            <span class="leaderboard-rank">4.</span>
+            <span class="leaderboard-name">TheRipper</span>
+            <span class="leaderboard-score">800</span>
+        </div>
+        <div class="leaderboard-entry">
+            <span class="leaderboard-rank">5.</span>
+            <span class="leaderboard-name">SilentHill</span>
+            <span class="leaderboard-score">650</span>
+        </div>
+    </div>
+    <div id="player-stats-container">
+        <div class="stat-box">
+            <h3>Kills</h3>
+            <p>128</p>
+        </div>
+        <div class="stat-box">
+            <h3>Tode</h3>
+            <p>42</p>
+        </div>
+        <div class="stat-box">
+            <h3>K/D</h3>
+            <p>3.05</p>
         </div>
     </div>
     <script src="script.js"></script>
