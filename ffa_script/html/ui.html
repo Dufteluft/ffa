@@ -7,23 +7,48 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="ffa-container" style="display: none;">
-        <div class="header">
-            <h1>FFA Auswahlmenü</h1>
-            <button id="closeButton" class="close-btn">X</button>
-        </div>
-        <div id="map-list-container">
-            <!-- Map-Karten werden hier per JS eingefügt -->
-        </div>
-        <div id="lobby-details" style="display: none;">
-            <h2>Lobby für <span id="lobby-map-name"></span></h2>
-            <p>Spieler: <span id="lobby-current-players">0</span> / <span id="lobby-max-players">0</span></p>
-            <div id="player-list">
-                <!-- Spielerliste wird hier angezeigt -->
+    <div id="main-container" style="display: none;">
+        <div id="left-container">
+            <div id="ffa-container">
+                <div class="header">
+                    <h1>FFA Auswahlmenü</h1>
+                    <button id="closeButton" class="close-btn">X</button>
+                </div>
+                <div id="map-list-container">
+                    <!-- Map-Karten werden hier per JS eingefügt -->
+                </div>
+                <div id="lobby-details" style="display: none;">
+                    <h2>Lobby für <span id="lobby-map-name"></span></h2>
+                    <p>Spieler: <span id="lobby-current-players">0</span> / <span id="lobby-max-players">0</span></p>
+                    <div id="player-list">
+                        <!-- Spielerliste wird hier angezeigt -->
+                    </div>
+                    <button id="leaveLobbyButton">Lobby verlassen</button>
+                </div>
             </div>
-            <button id="leaveLobbyButton">Lobby verlassen</button>
+            <div id="stats-container">
+                <div class="stat-circle">
+                    <p>Kills</p>
+                    <span id="kills-stat">0</span>
+                </div>
+                <div class="stat-circle">
+                    <p>Tode</p>
+                    <span id="deaths-stat">0</span>
+                </div>
+                <div class="stat-circle">
+                    <p>K/D</p>
+                    <span id="kd-stat">0.00</span>
+                </div>
+            </div>
+        </div>
+        <div id="leaderboard-container">
+            <h2><i class="fas fa-trophy"></i> Leaderboard</h2>
+            <div id="leaderboard-list">
+                <!-- Leaderboard-Einträge werden hier per JS eingefügt -->
+            </div>
         </div>
     </div>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script src="script.js"></script>
 </body>
 </html>

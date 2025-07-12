@@ -1,26 +1,113 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: transparent; /* Wichtig für NUI */
+    background-color: transparent;
     margin: 0;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    overflow: hidden; /* Verhindert Scrollbalken auf der Body-Ebene */
+    overflow: hidden;
+}
+
+#main-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 16px;
+    width: 72vw;
+    height: 64vh;
+}
+
+#left-container {
+    display: flex;
+    flex-direction: column;
+    width: 70%;
+    height: 100%;
 }
 
 #ffa-container {
-    width: 500px;
+    flex-grow: 1;
     padding: 20px;
-    background-color: rgba(50, 50, 50, 0.9);
+    background-color: rgba(0, 0, 0, 0.85); /* Schwarz */
     border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); /* Roter Schatten */
     color: white;
-    text-align: center;
-    max-height: 80vh; /* Maximale Höhe, um Scrollen innerhalb des Containers zu ermöglichen */
     display: flex;
     flex-direction: column;
+    max-height: calc(100% - 120px);
+}
+
+#leaderboard-container {
+    width: 30%;
+    height: 100%;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.85); /* Schwarz */
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); /* Roter Schatten */
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+#leaderboard-container h2 {
+    color: #FFD700; /* Gold */
+    text-align: center;
+    margin-top: 0;
+}
+
+#leaderboard-list {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.leaderboard-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #444;
+}
+
+.leaderboard-entry:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-entry .rank {
+    font-weight: bold;
+    color: #FFD700; /* Gold */
+}
+
+#stats-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.stat-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: rgba(20, 20, 20, 0.9); /* Dunkles Grau/Schwarz */
+    border: 2px solid #FFD700; /* Goldener Rand */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    box-shadow: 0 2px 5px rgba(255,0,0,0.4);
+}
+
+.stat-circle p {
+    margin: 0;
+    font-size: 1.1em;
+    color: #FFD700; /* Gold */
+}
+
+.stat-circle span {
+    font-size: 1.5em;
+    font-weight: bold;
 }
 
 .header {
@@ -32,15 +119,15 @@ body {
 }
 
 h1 {
-    color: #ff8c00; /* Orange-ähnliche Farbe für den Titel */
+    color: #FFD700; /* Gold */
     margin: 0;
     font-size: 1.8em;
 }
 
 .close-btn {
-    background-color: #d9534f;
+    background-color: #FF0000; /* Rot */
     color: white;
-    border: none;
+    border: 1px solid #FFD700; /* Goldener Rand */
     border-radius: 50%;
     width: 30px;
     height: 30px;
@@ -52,27 +139,34 @@ h1 {
 }
 
 .close-btn:hover {
-    background-color: #c9302c;
+    background-color: #b30000; /* Dunkelrot */
 }
 
 #map-list-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    padding: 15px;
-    overflow-y: auto; /* Ermöglicht Scrollen, wenn viele Maps vorhanden sind */
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 10px;
+    overflow-y: auto;
     flex-grow: 1;
 }
 
 .map-card {
-    background-color: #3f3f3f;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    background-color: #1a1a1a; /* Dunkles Grau/Schwarz */
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    border: 1px solid #444;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
+}
+
+.map-card.placeholder {
+    background-color: transparent;
+    box-shadow: none;
+    pointer-events: none;
 }
 
 .map-card img {
@@ -81,12 +175,12 @@ h1 {
     height: auto;
     border-radius: 5px;
     margin-bottom: 10px;
-    background-color: #555; /* Hintergrund für den Fall, dass das Bild nicht lädt */
+    background-color: #555;
 }
 
 .map-card h3 {
     margin: 5px 0;
-    color: #ffae42;
+    color: #FFD700; /* Gold */
     font-size: 1.1em;
 }
 
@@ -94,7 +188,7 @@ h1 {
     font-size: 0.8em;
     color: #ccc;
     margin-bottom: 10px;
-    flex-grow: 1; /* Sorgt dafür, dass die Beschreibung den verfügbaren Platz einnimmt */
+    flex-grow: 1;
 }
 
 .map-card .players {
@@ -105,9 +199,9 @@ h1 {
 
 .join-btn {
     padding: 8px 12px;
-    background-color: #5cb85c;
+    background-color: #FF0000; /* Rot */
     color: white;
-    border: none;
+    border: 1px solid #FFD700; /* Gold */
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9em;
@@ -115,7 +209,7 @@ h1 {
 }
 
 .join-btn:hover {
-    background-color: #4cae4c;
+    background-color: #b30000; /* Dunkelrot */
 }
 
 #lobby-details {
@@ -125,12 +219,12 @@ h1 {
 }
 
 #lobby-details h2 {
-    color: #ffae42;
+    color: #FFD700; /* Gold */
 }
 
 #player-list {
     min-height: 50px;
-    background-color: #333;
+    background-color: #1a1a1a; /* Dunkles Grau/Schwarz */
     border-radius: 5px;
     padding: 10px;
     margin-bottom: 10px;
@@ -143,17 +237,18 @@ h1 {
 }
 
 #leaveLobbyButton {
-    background-color: #f0ad4e;
+    background-color: #8B0000; /* Dunkelrot */
+    border: 1px solid #FFD700; /* Gold */
 }
 #leaveLobbyButton:hover {
-    background-color: #ec971f;
+    background-color: #b30000; /* Dunkelrot */
 }
 
-button { /* Allgemeiner Button-Style, falls nicht spezifischer */
+button {
     padding: 10px 15px;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 10px; /* Etwas weniger Margin als zuvor */
+    margin-top: 10px;
 }
