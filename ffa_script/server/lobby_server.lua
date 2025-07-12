@@ -65,7 +65,7 @@ AddEventHandler('esx_ffa:createLobby', function(data)
 end)
 
 RegisterNetEvent('esx_ffa:joinLobby')
-AddEventHandler('esx_ffa:joinLobby', function(lobbyId)
+AddEventHandler('esx_ffa:joinLobby', function(lobbyId, mapId)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
     local lobby = nil
@@ -81,16 +81,21 @@ AddEventHandler('esx_ffa:joinLobby', function(lobbyId)
         return
     end
 
+    if lobby.mapId ~= mapId then
+        print('[FFA_SCRIPT][SERVER] Map ID mismatch. Lobby has mapId ' .. lobby.mapId .. ' but received ' .. mapId)
+        return
+    end
+
     local map = nil
     for i, m in ipairs(Config.Maps) do
-        if m.id == lobby.mapId then
+        if m.id == mapId then
             map = m
             break
         end
     end
 
     if not map then
-        print('[FFA_SCRIPT][SERVER] Could not find map with id: ' .. lobby.mapId)
+        print('[FFA_SCRIPT][SERVER] Could not find map with id: ' .. mapId)
         return
     end
 

@@ -24,7 +24,7 @@ RegisterNUICallback('createLobby', function(data, cb)
 end)
 
 RegisterNUICallback('joinLobby', function(data, cb)
-    TriggerServerEvent('esx_ffa:joinLobby', data.lobbyId)
+    TriggerServerEvent('esx_ffa:joinLobby', data.lobbyId, data.mapId)
     cb('ok')
 end)
 

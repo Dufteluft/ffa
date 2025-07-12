@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
             lobbyItem.innerHTML = `
                 <div class="lobby-name">${lobby.name}</div>
                 <div class="lobby-players">${lobby.players} / ${lobby.maxPlayers}</div>
-                <button class="join-lobby-btn" data-lobby-id="${lobby.id}">Beitreten</button>
+                <button class="join-lobby-btn" data-lobby-id="${lobby.id}" data-map-id="${lobby.mapId}">Beitreten</button>
             `;
             lobbyListContainer.appendChild(lobbyItem);
         });
@@ -147,10 +147,11 @@ document.addEventListener('DOMContentLoaded', function () {
     lobbyListContainer.addEventListener('click', function(event) {
         if (event.target.classList.contains('join-lobby-btn')) {
             const lobbyId = parseInt(event.target.getAttribute('data-lobby-id'), 10);
+            const mapId = event.target.getAttribute('data-map-id');
             fetch(`https://${GetParentResourceName()}/joinLobby`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-                body: JSON.stringify({ lobbyId: lobbyId }),
+                body: JSON.stringify({ lobbyId: lobbyId, mapId: mapId }),
             }).catch(err => console.error("Error joining lobby:", err));
         }
     });
