@@ -199,14 +199,26 @@ function GivePlayerMapLoadout(playerId, mapId)
     local xPlayer = ESX.GetPlayerFromId(playerId)
     local mapConfig = getMapConfigById(mapId)
 
-    if not mapConfig or not mapConfig.weapons then
-        DebugPrint("Loadout: Map-Konfiguration oder Waffen für MapID " .. mapId .. " nicht gefunden.")
+    DebugPrint("Loadout: GivePlayerMapLoadout aufgerufen für Spieler " .. playerId .. " und MapID " .. mapId)
+
+    if not mapConfig then
+        DebugPrint("Loadout ERROR: Map-Konfiguration für MapID " .. mapId .. " nicht gefunden.")
         return
     end
+    DebugPrint("Loadout: Map-Konfiguration für '" .. mapConfig.displayName .. "' gefunden.")
+
+    if not mapConfig.weapons or #mapConfig.weapons == 0 then
+        DebugPrint("Loadout WARNING: Keine Waffen in der Konfiguration für MapID " .. mapId .. " definiert.")
+        if xPlayer then
+            xPlayer.showNotification("Für diese Map sind keine spezifischen Waffen konfiguriert.")
+        end
+        return
+    end
+    DebugPrint("Loadout: Waffenkonfiguration für Map '" .. mapConfig.displayName .. "': " .. json.encode(mapConfig.weapons))
 
     local playerPed = GetPlayerPed(playerId)
     if not playerPed or playerPed == 0 then
-        DebugPrint("Loadout: Konnte Ped für Spieler " .. playerId .. " nicht bekommen. Waffen können nicht geändert werden.")
+        DebugPrint("Loadout ERROR: Konnte Ped ("..tostring(playerPed)..") für Spieler " .. playerId .. " nicht bekommen. Waffen können nicht geändert werden.")
         if xPlayer then
             xPlayer.showNotification("Fehler: Spieler-Entität nicht gefunden für Waffen-Loadout.")
         end
@@ -214,22 +226,29 @@ function GivePlayerMapLoadout(playerId, mapId)
     end
 
     RemoveAllPedWeapons(playerPed, true)
-    DebugPrint("Loadout: Alle Waffen von Spieler " .. playerId .. " (Ped: " .. playerPed .. ") entfernt via Native.")
+    DebugPrint("Loadout: Alle Waffen von Spieler " .. playerId .. " (Ped: " .. playerPed .. ") entfernt (via Native).")
 
-    for _, weaponData in ipairs(mapConfig.weapons) do
-        if weaponData.hash and weaponData.ammo then
-            local weaponHashKey = GetHashKey(weaponData.hash)
-            GiveWeaponToPed(playerPed, weaponHashKey, weaponData.ammo, false, true)
-            DebugPrint("Loadout: Spieler " .. playerId .. " (Ped: " .. playerPed .. ") erhielt Waffe " .. weaponData.hash .. " (Hash: " .. weaponHashKey .. ") mit " .. weaponData.ammo .. " Munition via Native.")
+    for i, weaponData in ipairs(mapConfig.weapons) do
+        if weaponData.hash and weaponData.ammo and tonumber(weaponData.ammo) then
+            local weaponName = tostring(weaponData.hash)
+            local weaponAmmo = tonumber(weaponData.ammo)
+            local weaponHashKey = GetHashKey(weaponName)
+
+            if weaponHashKey == 0 or weaponHashKey == -1 then -- GetHashKey gibt 0 oder -1 zurück, wenn der Name ungültig ist
+                 DebugPrint("Loadout WARNING: Ungültiger Waffenname '" .. weaponName .. "' in Map-Konfiguration (Index " .. i .. "). Hash-Key ist 0 oder -1.")
+            else
+                GiveWeaponToPed(playerPed, weaponHashKey, weaponAmmo, false, true)
+                DebugPrint("Loadout: Spieler " .. playerId .. " (Ped: " .. playerPed .. ") erhielt Waffe " .. weaponName .. " (Hash: " .. weaponHashKey .. ") mit " .. weaponAmmo .. " Munition (via Native).")
+            end
         else
-            DebugPrint("Loadout: Ungültige Waffendaten für MapID " .. mapId .. ": Hash=" .. tostring(weaponData.hash) .. ", Ammo=" .. tostring(weaponData.ammo))
+            DebugPrint("Loadout WARNING: Ungültige oder fehlende Waffendaten/Munition für MapID " .. mapId .. " (Index " .. i .. "): Name=" .. tostring(weaponData.hash) .. ", Ammo=" .. tostring(weaponData.ammo))
         end
     end
 
     if xPlayer then
         xPlayer.showNotification("Du hast das Waffen-Loadout für '" .. mapConfig.displayName .. "' erhalten.")
     end
-    DebugPrint("Loadout: Waffen-Loadout für Map '" .. mapConfig.displayName .. "' an Spieler " .. playerId .. " (Ped: " .. playerPed .. ") vergeben via Native.")
+    DebugPrint("Loadout: Waffen-Loadout-Prozess für Map '" .. mapConfig.displayName .. "' an Spieler " .. playerId .. " (Ped: " .. playerPed .. ") abgeschlossen (via Native).")
 end
 
 local playerFFAState = {}
