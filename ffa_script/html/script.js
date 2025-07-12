@@ -8,13 +8,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const lobbyMaxPlayers = document.getElementById('lobby-max-players');
     const playerListDiv = document.getElementById('player-list');
     const leaveLobbyButton = document.getElementById('leaveLobbyButton');
+    const tabContainer = document.querySelector('.tab-container');
+    const leaderboardContainer = document.getElementById('leaderboard-container');
+    const playerStatsContainer = document.getElementById('player-stats-container');
 
     let currentMapData = []; // Um die Map-Daten lokal zu speichern
     let currentlyDisplayedLobbyMapId = null; // Welche Lobby wird gerade angezeigt?
 
+    function setExtraUIVisibility(visible) {
+        const display = visible ? 'flex' : 'none';
+        const leaderboardDisplay = visible ? 'block' : 'none';
+        tabContainer.style.display = display;
+        playerStatsContainer.style.display = display;
+        leaderboardContainer.style.display = leaderboardDisplay;
+    }
+
     // Funktion zum Schließen des Menüs und Senden der NUI-Nachricht an Lua
     function closeMenu() {
         ffaContainer.style.display = 'none';
+        setExtraUIVisibility(false);
         mapListContainer.style.display = 'flex'; // Map-Liste wieder anzeigen, falls Lobby offen war
         lobbyDetailsView.style.display = 'none'; // Lobby-Ansicht ausblenden
         currentlyDisplayedLobbyMapId = null;
@@ -142,6 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const item = event.data;
         if (item.action === 'openMenu') {
             ffaContainer.style.display = 'flex';
+            setExtraUIVisibility(true);
             if (item.maps) {
                 displayMaps(item.maps);
             }
@@ -190,4 +203,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     console.log("FFA UI Script geladen und initialisiert.");
+    // Initially hide the extra UI elements
+    setExtraUIVisibility(false);
 });
