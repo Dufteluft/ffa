@@ -2,13 +2,15 @@ ESX = nil
 TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 
 RegisterNetEvent('esx_ffa:openMenu')
-AddEventHandler('esx_ffa:openMenu', function(lobbies, playerStats, leaderboard)
+AddEventHandler('esx_ffa:openMenu', function(lobbies, playerStats, leaderboard, maps, weapons)
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = "openMenu",
         lobbies = lobbies,
         playerStats = playerStats,
-        leaderboard = leaderboard
+        leaderboard = leaderboard,
+        maps = maps,
+        weapons = weapons
     })
 end)
 

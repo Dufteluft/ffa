@@ -1,13 +1,21 @@
 ESX = nil
 TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 
-local lobbies = {
-    { id = 1, name = 'Standard Map 1', players = 5, maxPlayers = 10, map = 'Standard Map 1', weapons = {'Pistol', 'SMG'} },
-    { id = 2, name = 'Standard Map 2', players = 8, maxPlayers = 10, map = 'Standard Map 2', weapons = {'Assault Rifle', 'Sniper Rifle'} },
-    { id = 3, name = 'Standard Map 3', players = 2, maxPlayers = 10, map = 'Standard Map 3', weapons = {'Shotgun'} },
-}
+local lobbies = {}
+local nextLobbyId = 1
 
-local nextLobbyId = 4
+for i, map in ipairs(Config.Maps) do
+    table.insert(lobbies, {
+        id = nextLobbyId,
+        name = map.displayName,
+        players = 0,
+        maxPlayers = map.maxPlayers,
+        map = map.id,
+        weapons = map.weapons,
+        isPermanent = true -- Mark permanent lobbies
+    })
+    nextLobbyId = nextLobbyId + 1
+end
 
 function getPlayerStats(playerId)
     -- Diese Funktion müsste implementiert werden, um die echten Spielerstatistiken abzurufen
@@ -67,5 +75,15 @@ ESX.RegisterCommand('ffa', 'user', function(xPlayer, args, showError)
     local src = xPlayer.source
     local playerStats = getPlayerStats(src)
     local leaderboard = getLeaderboard()
-    TriggerClientEvent('esx_ffa:openMenu', src, lobbies, playerStats, leaderboard)
+    local allWeapons = {}
+    local weaponNames = {}
+    for _, map in ipairs(Config.Maps) do
+        for _, weapon in ipairs(map.weapons) do
+            if not weaponNames[weapon.name] then
+                table.insert(allWeapons, weapon)
+                weaponNames[weapon.name] = true
+            end
+        end
+    end
+    TriggerClientEvent('esx_ffa:openMenu', src, lobbies, playerStats, leaderboard, Config.Maps, allWeapons)
 end, false, { help = 'Öffnet das FFA Menü' })

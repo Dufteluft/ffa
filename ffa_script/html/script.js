@@ -77,30 +77,30 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Funktion zum Befüllen der Auswahlfelder für die Lobby-Erstellung
-    function populateCreateLobbyOptions() {
+    function populateCreateLobbyOptions(maps, weapons) {
         const mapSelect = document.getElementById('lobby-map');
         const weaponsSelect = document.getElementById('lobby-weapons');
 
         mapSelect.innerHTML = '';
         weaponsSelect.innerHTML = '';
 
-        // Dummy-Daten - diese sollten von der Lua-Seite kommen
-        const maps = ['Standard Map 1', 'Standard Map 2', 'Standard Map 3', 'Custom Map A'];
-        const weapons = ['Pistol', 'SMG', 'Assault Rifle', 'Sniper Rifle', 'Shotgun'];
+        if (maps) {
+            maps.forEach(map => {
+                const option = document.createElement('option');
+                option.value = map.id;
+                option.textContent = map.displayName;
+                mapSelect.appendChild(option);
+            });
+        }
 
-        maps.forEach(map => {
-            const option = document.createElement('option');
-            option.value = map;
-            option.textContent = map;
-            mapSelect.appendChild(option);
-        });
-
-        weapons.forEach(weapon => {
-            const option = document.createElement('option');
-            option.value = weapon;
-            option.textContent = weapon;
-            weaponsSelect.appendChild(option);
-        });
+        if (weapons) {
+            weapons.forEach(weapon => {
+                const option = document.createElement('option');
+                option.value = weapon.name;
+                option.textContent = weapon.name;
+                weaponsSelect.appendChild(option);
+            });
+        }
     }
 
     // Event Listener für den "Lobby erstellen"-Button
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 kills.textContent = item.playerStats.kills;
                 deaths.textContent = item.playerStats.deaths;
             }
-            populateCreateLobbyOptions(); // Dies müsste auch Daten von Lua erhalten
+            populateCreateLobbyOptions(item.maps, item.weapons);
         } else if (item.action === 'closeMenu') {
             closeMenu();
         } else if (item.action === 'updateLobbies') {
