@@ -291,8 +291,19 @@ RegisterNetEvent('ffa:setClientPedCoords')
 AddEventHandler('ffa:setClientPedCoords', function(coords)
     if coords and coords.x and coords.y and coords.z then
         local playerPed = PlayerPedId()
-        SetEntityCoords(playerPed, coords.x, coords.y, coords.z, false, false, false, true)
-        DebugPrint("Client: Koordinaten gesetzt auf " .. coords.x .. ", " .. coords.y .. ", " .. coords.z)
+        -- SetEntityCoordsNoOffset anstelle von SetEntityCoords, um sicherzustellen, dass der Spieler nicht im Boden spawnt,
+        -- besonders wenn die Z-Koordinate präzise ist. true für keepOffset, false für NoOffset.
+        -- Für den Rückteleport ist NoOffset oft besser, um genau an der Stelle zu landen.
+        -- Für den Spawn in die Arena könnte man argumentieren, dass ein Offset (wenn Z nicht perfekt ist) hilfreich wäre.
+        -- Wir verwenden hier NoOffset für Präzision.
+        SetEntityCoordsNoOffset(playerPed, coords.x, coords.y, coords.z, false, false, true) -- x, y, z, xAxis, yAxis, zAxis (keepOffset = false, noGroundFix = false, clearArea = true)
+
+        if coords.heading then
+            SetEntityHeading(playerPed, tonumber(coords.heading))
+            DebugPrint("Client: Koordinaten gesetzt auf " .. coords.x .. ", " .. coords.y .. ", " .. coords.z .. " mit Heading " .. coords.heading)
+        else
+            DebugPrint("Client: Koordinaten gesetzt auf " .. coords.x .. ", " .. coords.y .. ", " .. coords.z .. " (kein Heading übergeben)")
+        end
     else
         DebugPrint("Client: Ungültige Koordinaten für ffa:setClientPedCoords erhalten: " .. json.encode(coords))
     end
