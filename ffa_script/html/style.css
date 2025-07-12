@@ -121,12 +121,31 @@ h1 {
     background-color: #4cae4c;
 }
 
-.bottom-stats {
+.bottom-controls {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
+    align-items: center;
     padding: 10px;
     border-top: 1px solid #444;
     margin-top: 15px;
+}
+
+.bottom-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.leave-lobby-btn {
+    padding: 8px 12px;
+    background-color: #d9534f;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.leave-lobby-btn:hover {
+    background-color: #c9302c;
 }
 
 #leaderboard {

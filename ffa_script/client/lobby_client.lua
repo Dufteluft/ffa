@@ -28,6 +28,11 @@ RegisterNUICallback('joinLobby', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('leaveLobby', function(data, cb)
+    TriggerServerEvent('esx_ffa:leaveLobby')
+    cb('ok')
+end)
+
 RegisterNetEvent('esx_ffa:updateLobbies')
 AddEventHandler('esx_ffa:updateLobbies', function(lobbies)
     SendNUIMessage({

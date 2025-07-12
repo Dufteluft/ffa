@@ -155,6 +155,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Event Listener für "Lobby verlassen"-Button
+    const leaveLobbyBtn = document.getElementById('leave-lobby-btn');
+    if (leaveLobbyBtn) {
+        leaveLobbyBtn.addEventListener('click', () => {
+            fetch(`https://${GetParentResourceName()}/leaveLobby`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                body: JSON.stringify({}),
+            }).catch(err => console.error("Error leaving lobby:", err));
+        });
+    }
+
     // Event Listener für Nachrichten von Lua (client.lua)
     window.addEventListener('message', function (event) {
         const item = event.data;
