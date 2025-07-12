@@ -286,5 +286,26 @@ AddEventHandler('ffa:playerRespawned', function()
     end
 end)
 
+-- Client-Event zum Setzen der Koordinaten
+RegisterNetEvent('ffa:setClientPedCoords')
+AddEventHandler('ffa:setClientPedCoords', function(coords)
+    if coords and coords.x and coords.y and coords.z then
+        local playerPed = PlayerPedId()
+        SetEntityCoords(playerPed, coords.x, coords.y, coords.z, false, false, false, true)
+        DebugPrint("Client: Koordinaten gesetzt auf " .. coords.x .. ", " .. coords.y .. ", " .. coords.z)
+    else
+        DebugPrint("Client: Ungültige Koordinaten für ffa:setClientPedCoords erhalten: " .. json.encode(coords))
+    end
+end)
+
+-- Client-Event zum Setzen von Gesundheit und Rüstung
+RegisterNetEvent('ffa:setClientPedHealthArmor')
+AddEventHandler('ffa:setClientPedHealthArmor', function(health, armor)
+    local playerPed = PlayerPedId()
+    SetEntityHealth(playerPed, health)
+    SetPedArmour(playerPed, armor)
+    DebugPrint("Client: Gesundheit auf " .. health .. " und Rüstung auf " .. armor .. " gesetzt.")
+end)
+
 
 DebugPrint("FFA Script Client-Seite geladen.")

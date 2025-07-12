@@ -1,3 +1,4 @@
+print("DEBUG: type(SetEntityHealth) is " .. type(SetEntityHealth)) -- Diese Zeile kann nach erfolgreichem Test entfernt werden
 ESX = exports["es_extended"]:getSharedObject()
 
 -- Hilfsfunktion für Debug-Nachrichten auf dem Server
@@ -98,16 +99,8 @@ AddEventHandler('ffa:joinLobby', function(mapId)
     if randomSpawn and randomSpawn.x and randomSpawn.y and randomSpawn.z then
         local newX, newY, newZ = tonumber(randomSpawn.x), tonumber(randomSpawn.y), tonumber(randomSpawn.z)
         if newX and newY and newZ then
-            local playerPed = GetPlayerPed(src)
-            if playerPed and playerPed ~= 0 then
-                SetEntityCoords(playerPed, newX, newY, newZ, false, false, false, true)
-                DebugPrint("TEST: Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") direkt via SetEntityCoords zu Spawn (" .. newX .. "," .. newY .. "," .. newZ .. ") teleportiert. Routing Bucket: " .. routingBucket)
-            else
-                DebugPrint("FEHLER: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für SetEntityCoords.")
-                xPlayer.showNotification("Fehler: Spieler-Ped nicht gefunden für Teleport.")
-                TriggerEvent('ffa:leaveLobby', mapId, src)
-                return
-            end
+            TriggerClientEvent('ffa:setClientPedCoords', src, { x = newX, y = newY, z = newZ })
+            DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") Teleport-Event an Client gesendet für Coords (" .. newX .. "," .. newY .. "," .. newZ .. "). Routing Bucket: " .. routingBucket)
         else
             DebugPrint("FEHLER: Konnte Koordinaten nicht in Zahlen umwandeln für Spieler " .. xPlayer.getName() .. ". x="..tostring(randomSpawn.x)..", y="..tostring(randomSpawn.y)..", z="..tostring(randomSpawn.z))
             xPlayer.showNotification("Fehler: Ungültige Spawnpunkt-Koordinaten für diese Map.")
@@ -124,13 +117,13 @@ AddEventHandler('ffa:joinLobby', function(mapId)
     GivePlayerMapLoadout(src, mapId)
     RegisterPlayerToFFA(src, mapId)
 
-    local playerPedForHealth = GetPlayerPed(src)
+    local playerPedForHealth = GetPlayerPed(src) -- Ped holen für Max Health
     if playerPedForHealth and playerPedForHealth ~= 0 then
-        SetEntityHealth(playerPedForHealth, GetEntityMaxHealth(playerPedForHealth))
-        SetPedArmour(playerPedForHealth, 100)
-        DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") erhielt volle Gesundheit und Rüstung via Natives.")
+        local maxHealth = GetEntityMaxHealth(playerPedForHealth)
+        TriggerClientEvent('ffa:setClientPedHealthArmor', src, maxHealth, 100)
+        DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") Health/Armor-Event an Client gesendet.")
     else
-        DebugPrint("FEHLER: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für Health/Armor Set.")
+        DebugPrint("FEHLER: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für initiales Health/Armor Set.")
     end
 
     TriggerClientEvent('ffa:playerJoinedMatch', src, mapId)
@@ -160,6 +153,7 @@ AddEventHandler('ffa:leaveLobby', function(customMapId, customSrc)
     TriggerClientEvent('ffa:playerLeftMatch', src)
     SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
     DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") aus FFA-Match auf Map '" .. mapDisplayName .. "' entfernt und Routing Bucket zurückgesetzt.")
+    -- Hier könnte man den Spieler auch an einen sicheren Ort teleportieren via Client-Event
 
     activeLobbies[mapId].players[src] = nil
     activeLobbies[mapId].playerCount = activeLobbies[mapId].playerCount - 1
@@ -313,17 +307,8 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
                 xPlayer.triggerEvent('esx_ambulancejob:revive', src)
                 Wait(150)
 
-                local playerPedRespawn = GetPlayerPed(src)
-                if playerPedRespawn and playerPedRespawn ~= 0 then
-                    SetEntityCoords(playerPedRespawn, respawnX, respawnY, respawnZ, false, false, false, true)
-                    DebugPrint("TEST: Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") direkt via SetEntityCoords respawned bei " .. respawnX .. ", " .. respawnY .. ", " .. respawnZ)
-                else
-                    DebugPrint("FEHLER beim Respawn: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für SetEntityCoords (Ped ID: " .. tostring(playerPedRespawn) .. ").")
-                    UnregisterPlayerFromFFA(src)
-                    TriggerClientEvent('ffa:playerLeftMatch', src)
-                    SetPlayerRoutingBucket(src, Config.DefaultRoutingBucket or 0)
-                    return
-                end
+                TriggerClientEvent('ffa:setClientPedCoords', src, { x = respawnX, y = respawnY, z = respawnZ })
+                DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") Respawn-Teleport-Event an Client gesendet für Coords (" .. respawnX .. "," .. respawnY .. "," .. respawnZ .. ").")
             else
                 DebugPrint("FEHLER beim Respawn: Konnte Koordinaten nicht in Zahlen umwandeln für Spieler " .. xPlayer.getName() .. ". x="..tostring(randomSpawnPoint.x)..", y="..tostring(randomSpawnPoint.y)..", z="..tostring(randomSpawnPoint.z))
                 xPlayer.showNotification("Fehler: Ungültige Respawn-Koordinaten.")
@@ -343,15 +328,14 @@ AddEventHandler('ffa:playerDiedInMatch', function(killerId)
             return
         end
 
-        local playerPedForHealthAndArmor = GetPlayerPed(src)
-        if playerPedForHealthAndArmor and playerPedForHealthAndArmor ~= 0 then
-            SetEntityHealth(playerPedForHealthAndArmor, GetEntityMaxHealth(playerPedForHealthAndArmor))
-            SetPedArmour(playerPedForHealthAndArmor, 100)
-            DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") erhielt volle Gesundheit und Rüstung via Natives.")
+        local playerPedForHealthAndArmorRespawn = GetPlayerPed(src)
+        if playerPedForHealthAndArmorRespawn and playerPedForHealthAndArmorRespawn ~= 0 then
+            local maxHealthRespawn = GetEntityMaxHealth(playerPedForHealthAndArmorRespawn)
+            TriggerClientEvent('ffa:setClientPedHealthArmor', src, maxHealthRespawn, 100)
+            DebugPrint("Spieler " .. xPlayer.getName() .. " (ID: " .. src .. ") Health/Armor-Event für Respawn an Client gesendet.")
         else
             DebugPrint("FEHLER: Konnte Ped für Spieler " .. xPlayer.getName() .. " nicht bekommen für Health/Armor Set beim Respawn.")
         end
-
 
         GivePlayerMapLoadout(src, mapId)
 
