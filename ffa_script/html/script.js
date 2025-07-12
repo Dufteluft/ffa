@@ -143,33 +143,35 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Event Listener für "Beitreten"-Buttons
+    lobbyListContainer.addEventListener('click', function(event) {
+        if (event.target.classList.contains('join-lobby-btn')) {
+            const lobbyId = event.target.getAttribute('data-lobby-id');
+            fetch(`https://${GetParentResourceName()}/joinLobby`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                body: JSON.stringify({ lobbyId: lobbyId }),
+            }).catch(err => console.error("Error joining lobby:", err));
+        }
+    });
+
     // Event Listener für Nachrichten von Lua (client.lua)
     window.addEventListener('message', function (event) {
         const item = event.data;
         if (item.action === 'openMenu') {
             ffaContainer.style.display = 'flex';
-            // Dummy-Daten für die UI
-            const dummyLobbies = [
-                { id: 1, name: 'Standard Map 1', players: 5, maxPlayers: 10 },
-                { id: 2, name: 'Standard Map 2', players: 8, maxPlayers: 10 },
-                { id: 3, name: 'Standard Map 3', players: 2, maxPlayers: 10 },
-                { id: 4, name: 'Custom Lobby 1', players: 1, maxPlayers: 8 },
-            ];
-            const dummyLeaderboard = [
-                { name: 'Player1', kd: 2.5 },
-                { name: 'Player2', kd: 2.1 },
-                { name: 'Player3', kd: 1.8 },
-            ];
-            displayLobbies(dummyLobbies);
-            displayLeaderboard(dummyLeaderboard);
-            kdRatio.textContent = '1.5';
-            kills.textContent = '150';
-            deaths.textContent = '100';
-
-            // Befülle die "Lobby erstellen"-Optionen
-            populateCreateLobbyOptions();
+            displayLobbies(item.lobbies);
+            displayLeaderboard(item.leaderboard);
+            if (item.playerStats) {
+                kdRatio.textContent = item.playerStats.kd;
+                kills.textContent = item.playerStats.kills;
+                deaths.textContent = item.playerStats.deaths;
+            }
+            populateCreateLobbyOptions(); // Dies müsste auch Daten von Lua erhalten
         } else if (item.action === 'closeMenu') {
             closeMenu();
+        } else if (item.action === 'updateLobbies') {
+            displayLobbies(item.lobbies);
         }
     });
 
