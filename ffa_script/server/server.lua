@@ -276,90 +276,16 @@ local function RemovePlayerFFALoadout(playerId)
     DebugPrint("Loadout REMOVAL: Prozess für Spieler " .. playerId .. " abgeschlossen.")
 end
 
-RegisterNetEvent('ffa:requestLobbies')
-AddEventHandler('ffa:requestLobbies', function()
-    local src = source
-    local lobbies = {}
-    for mapId, lobby in pairs(activeLobbies) do
-        table.insert(lobbies, {
-            id = lobby.mapDetails.id,
-            name = lobby.mapDetails.displayName,
-            mapName = lobby.mapDetails.displayName,
-            currentPlayers = lobby.playerCount,
-            maxPlayers = lobby.mapDetails.maxPlayers,
-            hasPassword = lobby.password ~= nil
-        })
-    end
-    TriggerClientEvent('ffa:updateLobbyList', src, lobbies)
-end)
-
-local function generateLobbyId()
-    return string.format("lobby_%s", math.random(1000, 9999))
-end
-
-RegisterNetEvent('ffa:createLobby')
-AddEventHandler('ffa:createLobby', function(lobbyData)
-    local src = source
-    local xPlayer = ESX.GetPlayerFromId(src)
-    if not xPlayer then return end
-
-    local mapConfig = getMapConfigById(lobbyData.mapId)
-    if not mapConfig then
-        xPlayer.showNotification("Ungültige Karte ausgewählt.")
-        return
-    end
-
-    local newLobbyId = generateLobbyId()
-    local newLobby = {
-        id = newLobbyId,
-        name = lobbyData.lobbyName,
-        mapId = lobbyData.mapId,
-        mapDetails = mapConfig,
-        maxPlayers = tonumber(lobbyData.maxPlayers) or 16,
-        password = lobbyData.password and lobbyData.password ~= "" and lobbyData.password or nil,
-        duration = tonumber(lobbyData.duration) or 15,
-        weapons = lobbyData.weapons or {},
-        players = {},
-        playerCount = 0
-    }
-
-    activeLobbies[newLobbyId] = newLobby
-    DebugPrint("Neue Lobby erstellt: " .. newLobby.name .. " (ID: " .. newLobbyId .. ")")
-
-    -- Automatically join the player to the lobby they created
-    TriggerEvent('ffa:joinLobby', newLobbyId, src)
-end)
-
 RegisterNetEvent('ffa:joinLobby')
-AddEventHandler('ffa:joinLobby', function(lobbyId)
+AddEventHandler('ffa:joinLobby', function(mapId)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
 
     if not xPlayer then DebugPrint("Spieler " .. src .. " nicht gefunden."); return end
     if playerLobbyMap[src] then DebugPrint("Spieler " .. xPlayer.getName() .. " bereits in Lobby " .. playerLobbyMap[src]); TriggerEvent('ffa:leaveLobby', playerLobbyMap[src], src) end
 
-    local lobby = activeLobbies[lobbyId]
-    if not lobby then
-        xPlayer.showNotification("Lobby nicht gefunden.")
-        return
-    end
-
-    -- Password check
-    -- This is a simplified check. A proper implementation would ask the user for a password in the UI.
-    if lobby.password then
-        xPlayer.showNotification("Diese Lobby ist passwortgeschützt.")
-        -- In a real scenario, you'd have a UI prompt for the password.
-        -- For now, we'll just deny entry.
-        return
-    end
-
-    if lobby.playerCount >= lobby.maxPlayers then
-        xPlayer.showNotification("Die Lobby ist bereits voll.")
-        return
-    end
-
-    local mapConfig = lobby.mapDetails
-    if not mapConfig then DebugPrint("Ungültige Map-ID in Lobby " .. lobbyId); return end
+    local mapConfig = getMapConfigById(mapId)
+    if not mapConfig then DebugPrint("Ungültige Map-ID " .. mapId); return end
 
     local ped = GetPlayerPed(src)
     if ped and ped ~= 0 then
@@ -380,21 +306,33 @@ AddEventHandler('ffa:joinLobby', function(lobbyId)
     DebugPrint("FFA Join: StoreAndClearPlayerInventoryForFFA erfolgreich für Spieler " .. src)
 
 
-    lobby.players[src] = xPlayer
-    lobby.playerCount = lobby.playerCount + 1
-    playerLobbyMap[src] = lobbyId
-    xPlayer.showNotification("Du bist der Lobby '" .. lobby.name .. "' beigetreten.")
-    TriggerClientEvent('ffa:updateLobbyView', -1, lobbyId, lobby.players, lobby.playerCount)
+    if not activeLobbies[mapId] then
+        activeLobbies[mapId] = { players = {}, mapDetails = mapConfig, playerCount = 0 }
+    end
+
+    if activeLobbies[mapId].playerCount >= mapConfig.maxPlayers then
+        xPlayer.showNotification("Die Lobby für " .. mapConfig.displayName .. " ist bereits voll.")
+        DebugPrint("FFA Join: Lobby voll für Spieler " .. src .. ". Rufe RestorePlayerOriginalInventory.")
+        RestorePlayerOriginalInventory(src)
+        if playerLastLocation[src] then playerLastLocation[src] = nil end
+        return
+    end
+
+    activeLobbies[mapId].players[src] = xPlayer
+    activeLobbies[mapId].playerCount = activeLobbies[mapId].playerCount + 1
+    playerLobbyMap[src] = mapId
+    xPlayer.showNotification("Du bist der Lobby für " .. mapConfig.displayName .. " beigetreten.")
+    TriggerClientEvent('ffa:updateLobbyView', -1, mapId, activeLobbies[mapId].players, activeLobbies[mapId].playerCount)
 
     if not mapConfig.spawnPoints or #mapConfig.spawnPoints == 0 then
         xPlayer.showNotification("Fehler: Keine Spawnpunkte konfiguriert.")
-        TriggerEvent('ffa:leaveLobby', lobbyId, src)
+        TriggerEvent('ffa:leaveLobby', mapId, src)
         return
     end
     local randomSpawn = mapConfig.spawnPoints[math.random(1, #mapConfig.spawnPoints)]
 
     local mapIndex = 0
-    for i, m in ipairs(Config.Maps) do if m.id == lobby.mapId then mapIndex = i; break end end
+    for i, m in ipairs(Config.Maps) do if m.id == mapId then mapIndex = i; break end end
     local routingBucket = 5000 + mapIndex
     SetPlayerRoutingBucket(src, routingBucket)
 
@@ -402,37 +340,36 @@ AddEventHandler('ffa:joinLobby', function(lobbyId)
         TriggerClientEvent('ffa:setClientPedCoords', src, { x = tonumber(randomSpawn.x), y = tonumber(randomSpawn.y), z = tonumber(randomSpawn.z), heading = randomSpawn.h or 0.0 })
     else
         xPlayer.showNotification("Fehler: Kritischer Fehler bei Spawnpunkt-Definition.")
-        TriggerEvent('ffa:leaveLobby', lobbyId, src)
+        TriggerEvent('ffa:leaveLobby', mapId, src)
         return
     end
 
     DebugPrint("FFA Join: Rufe GivePlayerMapLoadout für Spieler " .. src)
-    GivePlayerMapLoadout(src, lobbyId)
+    GivePlayerMapLoadout(src, mapId)
     DebugPrint("FFA Join: GivePlayerMapLoadout abgeschlossen für Spieler " .. src)
 
-    RegisterPlayerToFFA(src, lobbyId)
+    RegisterPlayerToFFA(src, mapId)
 
     if ped and ped ~= 0 then
         TriggerClientEvent('ffa:setClientPedHealthArmor', src, GetEntityMaxHealth(ped), 100)
     end
 
-    TriggerClientEvent('ffa:playerJoinedMatch', src, lobby.mapId)
-    DebugPrint("FFA-Match für Spieler " .. src .. " in Lobby " .. lobby.name .. " gestartet.")
+    TriggerClientEvent('ffa:playerJoinedMatch', src, mapId)
+    DebugPrint("FFA-Match für Spieler " .. src .. " auf Map " .. mapConfig.displayName .. " gestartet.")
 end)
 
 RegisterNetEvent('ffa:leaveLobby')
-AddEventHandler('ffa:leaveLobby', function(customLobbyId, customSrc)
+AddEventHandler('ffa:leaveLobby', function(customMapId, customSrc)
     local src = customSrc or source
     local xPlayer = ESX.GetPlayerFromId(src)
 
     if not xPlayer then DebugPrint("Spieler " .. src .. " nicht gefunden."); return end
-    local lobbyId = customLobbyId or playerLobbyMap[src]
-    if not lobbyId then xPlayer.showNotification("Du bist in keiner FFA-Lobby."); return end
-    local lobby = activeLobbies[lobbyId]
-    if not lobby or not lobby.players[src] then return end
+    local mapId = customMapId or playerLobbyMap[src]
+    if not mapId then xPlayer.showNotification("Du bist in keiner FFA-Lobby."); return end
+    if not activeLobbies[mapId] or not activeLobbies[mapId].players[src] then return end
 
-    local lobbyName = lobby.name
-    DebugPrint("FFA Leave: Spieler " .. src .. " verlässt FFA für Lobby " .. lobbyName)
+    local mapDisplayName = activeLobbies[mapId].mapDetails.displayName
+    DebugPrint("FFA Leave: Spieler " .. src .. " verlässt FFA für Map " .. mapDisplayName)
 
     DebugPrint("FFA Leave: Rufe RemovePlayerFFALoadout für Spieler " .. src)
     RemovePlayerFFALoadout(src)
@@ -452,25 +389,21 @@ AddEventHandler('ffa:leaveLobby', function(customLobbyId, customSrc)
         playerLastLocation[src] = nil
     end
 
-    lobby.players[src] = nil
-    lobby.playerCount = lobby.playerCount - 1
+    activeLobbies[mapId].players[src] = nil
+    activeLobbies[mapId].playerCount = activeLobbies[mapId].playerCount - 1
     playerLobbyMap[src] = nil
-    xPlayer.showNotification("Du hast die Lobby '" .. lobbyName .. "' verlassen.")
+    xPlayer.showNotification("Du hast die Lobby und das FFA-Match für " .. mapDisplayName .. " verlassen.")
 
-    if lobby.playerCount == 0 then
-        activeLobbies[lobbyId] = nil
-        DebugPrint("Lobby " .. lobbyId .. " ist leer und wird entfernt.")
-    end
-    -- Update all clients with the new lobby list
-    TriggerEvent('ffa:requestLobbies')
+    if activeLobbies[mapId].playerCount == 0 then activeLobbies[mapId] = nil end
+    TriggerClientEvent('ffa:updateLobbyView', -1, mapId, activeLobbies[mapId] and activeLobbies[mapId].players or {}, activeLobbies[mapId] and activeLobbies[mapId].playerCount or 0)
     DebugPrint("FFA Leave: Prozess für Spieler " .. src .. " abgeschlossen.")
 end)
 
 AddEventHandler('esx:playerDropped', function(playerId, reason)
-    local lobbyId = playerLobbyMap[playerId]
-    DebugPrint("Player Dropped: Spieler (ID: " .. playerId .. ") hat Server verlassen. Grund: " .. reason .. ". Lobby-ID: " .. tostring(lobbyId))
+    local currentMapId = playerLobbyMap[playerId]
+    DebugPrint("Player Dropped: Spieler (ID: " .. playerId .. ") hat Server verlassen. Grund: " .. reason .. ". Map-ID: " .. tostring(currentMapId))
 
-    if lobbyId then
+    if currentMapId then
         DebugPrint("Player Dropped: Rufe RemovePlayerFFALoadout für Spieler " .. playerId)
         RemovePlayerFFALoadout(playerId)
         DebugPrint("Player Dropped: RemovePlayerFFALoadout abgeschlossen für Spieler " .. playerId)
@@ -481,13 +414,12 @@ AddEventHandler('esx:playerDropped', function(playerId, reason)
 
         playerLastLocation[playerId] = nil
 
-        local lobby = activeLobbies[lobbyId]
+        local lobby = activeLobbies[currentMapId]
         if lobby and lobby.players[playerId] then
             lobby.players[playerId] = nil
             lobby.playerCount = lobby.playerCount - 1
-            if lobby.playerCount == 0 then activeLobbies[lobbyId] = nil end
-            -- Update all clients with the new lobby list
-            TriggerEvent('ffa:requestLobbies')
+            if lobby.playerCount == 0 then activeLobbies[currentMapId] = nil end
+            TriggerClientEvent('ffa:updateLobbyView', -1, currentMapId, lobby and lobby.players or {}, lobby and lobby.playerCount or 0)
         end
         playerLobbyMap[playerId] = nil
     end
@@ -495,50 +427,43 @@ AddEventHandler('esx:playerDropped', function(playerId, reason)
     DebugPrint("Player Dropped: Prozess für Spieler " .. playerId .. " abgeschlossen.")
 end)
 
-function GivePlayerMapLoadout(playerId, lobbyId)
+function GivePlayerMapLoadout(playerId, mapId)
     local xPlayer = ESX.GetPlayerFromId(playerId)
-    local lobby = activeLobbies[lobbyId]
+    local mapConfig = getMapConfigById(mapId)
 
-    DebugPrint("Loadout GIVE: Aufgerufen für Spieler " .. playerId .. ", LobbyID " .. lobbyId)
-    if not lobby then DebugPrint("Loadout GIVE ERROR: Lobby-Konfig nicht gefunden für LobbyID " .. lobbyId); return end
-    if not lobby.weapons or #lobby.weapons == 0 then DebugPrint("Loadout GIVE WARNING: Keine Waffen in Lobby-Config für LobbyID " .. lobbyId); if xPlayer then xPlayer.showNotification("Keine Waffen für diese Lobby konfiguriert.") end; return end
-    DebugPrint("Loadout GIVE: Waffenkonfig für '" .. lobby.name .. "': " .. json.encode(lobby.weapons))
+    DebugPrint("Loadout GIVE: Aufgerufen für Spieler " .. playerId .. ", MapID " .. mapId)
+    if not mapConfig then DebugPrint("Loadout GIVE ERROR: Map-Konfig nicht gefunden für MapID " .. mapId); return end
+    if not mapConfig.weapons or #mapConfig.weapons == 0 then DebugPrint("Loadout GIVE WARNING: Keine Waffen in Config für MapID " .. mapId); if xPlayer then xPlayer.showNotification("Keine Waffen für diese Map konfiguriert.") end; return end
+    DebugPrint("Loadout GIVE: Waffenkonfig für '" .. mapConfig.displayName .. "': " .. json.encode(mapConfig.weapons))
 
     playerCurrentFFALoadout[playerId] = {}
 
     if exports.ox_inventory then
         DebugPrint("Loadout GIVE: ox_inventory Export gefunden für Spieler " .. playerId)
-        for i, weaponName in ipairs(lobby.weapons) do
-            local weaponData = nil
-            for _, w in ipairs(Config.Weapons) do
-                if w.name == weaponName then
-                    weaponData = w
-                    break
-                end
-            end
+        for i, weaponData in ipairs(mapConfig.weapons) do
+            DebugPrint("Loadout GIVE: Verarbeite Waffe " .. i .. ": " .. json.encode(weaponData) .. " für Spieler " .. playerId)
 
-            if weaponData then
-                DebugPrint("Loadout GIVE: Verarbeite Waffe " .. i .. ": " .. json.encode(weaponData) .. " für Spieler " .. playerId)
-                local weaponAmmo = tonumber(weaponData.ammo)
+            -- Unterstütze sowohl 'hash' als auch 'name' Parameter
+            local weaponName = weaponData.name or weaponData.hash
+            local weaponAmmo = tonumber(weaponData.ammo)
 
-                if weaponName and weaponAmmo then
-                    weaponName = tostring(weaponName)
-                    local metadata = { ammo = weaponAmmo }
+            if weaponName and weaponAmmo then
+                weaponName = tostring(weaponName)
+                local metadata = { ammo = weaponAmmo }
 
-                    DebugPrint("Loadout GIVE: Versuche ox_inventory:AddItem für Spieler " .. playerId .. " - Waffe: " .. weaponName .. ", Munition: " .. weaponAmmo)
-                    local success, itemData = exports.ox_inventory:AddItem(playerId, weaponName, 1, metadata)
-                    if success and itemData then
-                        table.insert(playerCurrentFFALoadout[playerId], {name = weaponName, ammo = weaponAmmo})
-                        DebugPrint("Loadout GIVE: Spieler " .. playerId .. " erhielt " .. weaponName .. " (Munition: " .. weaponAmmo .. ") via ox_inventory.")
-                    else
-                        DebugPrint("Loadout GIVE ERROR: ox_inventory:AddItem für " .. weaponName .. " (Spieler: " .. playerId .. ") fehlgeschlagen. Erfolg: "..tostring(success))
-                    end
+                DebugPrint("Loadout GIVE: Versuche ox_inventory:AddItem für Spieler " .. playerId .. " - Waffe: " .. weaponName .. ", Munition: " .. weaponAmmo)
+                local success, itemData = exports.ox_inventory:AddItem(playerId, weaponName, 1, metadata)
+                if success and itemData then
+                    table.insert(playerCurrentFFALoadout[playerId], {name = weaponName, ammo = weaponAmmo})
+                    DebugPrint("Loadout GIVE: Spieler " .. playerId .. " erhielt " .. weaponName .. " (Munition: " .. weaponAmmo .. ") via ox_inventory.")
                 else
-                    DebugPrint("Loadout GIVE WARNING: Ungültige Waffendaten für Spieler " .. playerId .. ": Name/Hash=" .. tostring(weaponName) .. ", Ammo=" .. tostring(weaponAmmo))
+                    DebugPrint("Loadout GIVE ERROR: ox_inventory:AddItem für " .. weaponName .. " (Spieler: " .. playerId .. ") fehlgeschlagen. Erfolg: "..tostring(success))
                 end
+            else
+                DebugPrint("Loadout GIVE WARNING: Ungültige Waffendaten für Spieler " .. playerId .. ": Name/Hash=" .. tostring(weaponName) .. ", Ammo=" .. tostring(weaponAmmo))
             end
         end
-        if xPlayer then xPlayer.showNotification("FFA-Loadout für '" .. lobby.name .. "' erhalten.") end
+        if xPlayer then xPlayer.showNotification("FFA-Loadout für '" .. mapConfig.displayName .. "' erhalten.") end
         DebugPrint("Loadout GIVE: Prozess für Spieler " .. playerId .. " abgeschlossen. Finales getracktes Loadout: " .. json.encode(playerCurrentFFALoadout[playerId]))
     else
         DebugPrint("Loadout GIVE ERROR: ox_inventory Export nicht gefunden. Waffen können nicht gegeben werden für Spieler " .. playerId)

@@ -26,16 +26,6 @@ Config.DefaultRoutingBucket = 0
 --   boundaries: Definiert die Kampfzone.
 --     min: {x, y, z} für die minimale Ecke der Zone.
 --     max: {x, y, z} für die maximale Ecke der Zone.
-Config.Weapons = {
-    { name = 'weapon_pumpshotgun', label = 'Pump-Action Schrotflinte', ammo = 60 },
-    { name = 'weapon_pistol', label = 'Pistole', ammo = 120 },
-    { name = 'weapon_assaultrifle', label = 'Sturmgewehr', ammo = 240 },
-    { name = 'weapon_sniperrifle', label = 'Scharfschützengewehr', ammo = 40 },
-    { name = 'weapon_combatpistol', label = 'Kampfpistole', ammo = 90 },
-    { name = 'weapon_smg', label = 'Maschinenpistole', ammo = 200 },
-    { name = 'weapon_sawnoffshotgun', label = 'Abgesägte Schrotflinte', ammo = 50 },
-}
-
 Config.Maps = {
     {
         id = "construction_site",
@@ -48,6 +38,11 @@ Config.Maps = {
             { x = 1120.0, y = -1510.0, z = 35.0 },
             { x = 1140.0, y = -1505.0, z = 35.0 },
             { x = 1080.0, y = -1480.0, z = 35.0 },
+        },
+        weapons = {
+            -- Ox Inventory Item-Namen verwenden!
+            { name = 'weapon_pumpshotgun', ammo = 60 },
+            { name = 'weapon_pistol', ammo = 120 },
         },
         boundaries = {
             min = { x = 1050.0, y = -1550.0, z = 30.0 }, -- Untere süd-westliche Ecke
@@ -66,6 +61,11 @@ Config.Maps = {
             { x = 3070.88, y = -4720.08, z = 15.20 },
             { x = 3050.00, y = -4690.00, z = 15.20 },
         },
+        weapons = {
+            { name = 'weapon_assaultrifle', ammo = 240 },
+            { name = 'weapon_sniperrifle', ammo = 40 },
+            { name = 'weapon_combatpistol', ammo = 90 },
+        },
         boundaries = {
             min = { x = 3000.0, y = -4750.0, z = 10.0 },
             max = { x = 3150.0, y = -4650.0, z = 25.0 }
@@ -82,6 +82,10 @@ Config.Maps = {
             { x = 190.0, y = 2960.0, z = 45.5 },
             { x = 170.0, y = 2955.0, z = 45.5 },
             { x = 200.0, y = 2945.0, z = 45.5 },
+        },
+        weapons = {
+            { name = 'weapon_smg', ammo = 200 },
+            { name = 'weapon_sawnoffshotgun', ammo = 50 },
         },
         boundaries = {
             min = { x = 150.0, y = 2900.0, z = 40.0 },

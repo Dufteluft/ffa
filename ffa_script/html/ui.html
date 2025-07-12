@@ -9,58 +9,19 @@
 <body>
     <div id="ffa-container" style="display: none;">
         <div class="header">
-            <h1>FFA Lobbies</h1>
+            <h1>FFA Auswahlmenü</h1>
             <button id="closeButton" class="close-btn">X</button>
         </div>
-        <div class="tabs">
-            <button class="tab-button active" data-tab="lobbies-list">Lobbies</button>
-            <button class="tab-button" data-tab="create-lobby">Lobby erstellen</button>
+        <div id="map-list-container">
+            <!-- Map-Karten werden hier per JS eingefügt -->
         </div>
-        <div id="lobbies-list" class="tab-content active">
-            <div id="map-list-container">
-                <!-- Map-Karten werden hier per JS eingefügt -->
+        <div id="lobby-details" style="display: none;">
+            <h2>Lobby für <span id="lobby-map-name"></span></h2>
+            <p>Spieler: <span id="lobby-current-players">0</span> / <span id="lobby-max-players">0</span></p>
+            <div id="player-list">
+                <!-- Spielerliste wird hier angezeigt -->
             </div>
-            <div id="lobby-details" style="display: none;">
-                <h2>Lobby für <span id="lobby-map-name"></span></h2>
-                <p>Spieler: <span id="lobby-current-players">0</span> / <span id="lobby-max-players">0</span></p>
-                <div id="player-list">
-                    <!-- Spielerliste wird hier angezeigt -->
-                </div>
-                <button id="leaveLobbyButton">Lobby verlassen</button>
-            </div>
-        </div>
-        <div id="create-lobby" class="tab-content">
-            <form id="create-lobby-form">
-                <div class="form-group">
-                    <label for="lobby-name">Lobby Name:</label>
-                    <input type="text" id="lobby-name" name="lobbyName" required>
-                </div>
-                <div class="form-group">
-                    <label for="map-select">Karte:</label>
-                    <select id="map-select" name="mapId" required>
-                        <!-- Optionen werden per JS geladen -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="max-players">Maximale Spieler:</label>
-                    <input type="number" id="max-players" name="maxPlayers" min="2" max="32" value="16" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Passwort (optional):</label>
-                    <input type="password" id="password" name="password">
-                </div>
-                <div class="form-group">
-                    <label for="weapon-select">Waffen:</label>
-                    <select id="weapon-select" name="weapons" multiple required>
-                        <!-- Optionen werden per JS geladen -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="duration">Dauer (Minuten):</label>
-                    <input type="number" id="duration" name="duration" min="5" max="60" value="15" required>
-                </div>
-                <button type="submit" class="cta-button">Lobby erstellen</button>
-            </form>
+            <button id="leaveLobbyButton">Lobby verlassen</button>
         </div>
     </div>
     <script src="script.js"></script>
