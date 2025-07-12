@@ -30,7 +30,7 @@ RegisterCommand(Config.CommandName, function(source, args, rawCommand)
 
     if not isMenuOpen then
         -- UI öffnen (NUI-Nachricht senden)
-        -- Lade Map-Daten aus der Config und sende sie an die UI
+        TriggerServerEvent('ffa:requestLobbies')
         local mapsForUI = {}
         for i, mapInfo in ipairs(Config.Maps) do
             table.insert(mapsForUI, {
@@ -39,19 +39,19 @@ RegisterCommand(Config.CommandName, function(source, args, rawCommand)
                 description = mapInfo.description,
                 thumbnail = mapInfo.thumbnail,
                 maxPlayers = mapInfo.maxPlayers,
-                -- currentPlayers = GetCurrentPlayersOnMap(mapInfo.id) -- Funktion muss noch implementiert werden
-                currentPlayers = 0 -- Platzhalter
+                currentPlayers = 0 -- Placeholder, will be updated by server
             })
         end
 
         SendNUIMessage({
             action = "openMenu",
-            maps = mapsForUI
+            maps = mapsForUI,
+            weapons = Config.Weapons -- Sending all possible weapons
         })
         SetNuiFocus(true, true)
         isMenuOpen = true
-        DebugPrint("FFA UI geöffnet (simuliert).")
-        ESX.ShowNotification("FFA Menü geöffnet (Befehl: /" .. Config.CommandName .. ")") -- Platzhalter-Benachrichtigung
+        DebugPrint("FFA UI geöffnet.")
+        ESX.ShowNotification("FFA Menü geöffnet (Befehl: /" .. Config.CommandName .. ")")
     else
         -- UI schließen
         SendNUIMessage({
@@ -59,10 +59,10 @@ RegisterCommand(Config.CommandName, function(source, args, rawCommand)
         })
         SetNuiFocus(false, false)
         isMenuOpen = false
-        DebugPrint("FFA UI geschlossen (simuliert).")
-        ESX.ShowNotification("FFA Menü geschlossen.") -- Platzhalter-Benachrichtigung
+        DebugPrint("FFA UI geschlossen.")
+        ESX.ShowNotification("FFA Menü geschlossen.")
     end
-end, false) -- false bedeutet, dass jeder den Befehl nutzen kann
+end, false)
 
 -- NUI Callback für das Schließen des Menüs über ESC oder einen Button in der UI
 RegisterNUICallback('closeMenu', function(data, cb)
@@ -92,6 +92,15 @@ RegisterNUICallback('leaveLobby', function(data, cb)
 end)
 
 -- Event Handler für Lobby-Updates vom Server
+RegisterNetEvent('ffa:updateLobbyList')
+AddEventHandler('ffa:updateLobbyList', function(lobbies)
+    DebugPrint("Client Event: ffa:updateLobbyList erhalten")
+    SendNUIMessage({
+        action = "updateLobbyList",
+        lobbies = lobbies
+    })
+end)
+
 RegisterNetEvent('ffa:updateLobbyView')
 AddEventHandler('ffa:updateLobbyView', function(mapId, playersTable, playerCount)
     DebugPrint("Client Event: ffa:updateLobbyView für MapID: " .. mapId .. " Spieleranzahl: " .. playerCount)
