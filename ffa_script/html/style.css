@@ -112,8 +112,8 @@ h1 {
 }
 
 #map-list-container {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 15px;
     padding: 20px;
     overflow-y: auto;
@@ -414,4 +414,21 @@ button {
     font-weight: bold;
     margin: 0;
     color: #fff;
+}
+
+/* Create lobby placeholder styling */
+#create-lobby-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.placeholder-box {
+    background-color: rgba(30, 0, 0, 0.7);
+    border: 2px dashed #7B0000;
+    border-radius: 15px;
+    height: 150px;
 }
