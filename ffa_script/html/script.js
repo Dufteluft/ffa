@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (item.action === 'updateMapPlayerCounts') {
             // Wird verwendet, um nur die Spielerzahlen auf den Map-Karten zu aktualisieren
             // (nützlich, wenn der Spieler nicht in dieser Lobby-Ansicht ist)
-            updateMapCardPlayerCount(item.mapId, item.currentPlayers);
+            updateLobbyCardPlayerCount(item.mapId, item.currentPlayers);
         }
     });
 

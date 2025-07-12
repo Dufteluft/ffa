@@ -9,14 +9,19 @@
 <body>
     <div id="ffa-container" style="display: none;">
         <div class="header">
-            <h1>FFA Lobbies</h1>
+            <h1>FFA</h1>
             <button id="closeButton" class="close-btn">X</button>
         </div>
         <div class="tabs">
-            <button class="tab-button active" data-tab="lobbies-list">Lobbies</button>
-            <button class="tab-button" data-tab="create-lobby">Lobby erstellen</button>
+            <button class="tab-button active" data-tab="leaderboard">Leaderboard</button>
+            <button class="tab-button" data-tab="lobby">Lobby</button>
         </div>
-        <div id="lobbies-list" class="tab-content active">
+        <div id="leaderboard" class="tab-content active">
+            <!-- Leaderboard content will go here -->
+            <h2>Leaderboard</h2>
+            <p>Coming soon...</p>
+        </div>
+        <div id="lobby" class="tab-content">
             <div id="map-list-container">
                 <!-- Map-Karten werden hier per JS eingefügt -->
             </div>
@@ -28,8 +33,7 @@
                 </div>
                 <button id="leaveLobbyButton">Lobby verlassen</button>
             </div>
-        </div>
-        <div id="create-lobby" class="tab-content">
+            <div id="create-lobby" class="tab-content">
             <form id="create-lobby-form">
                 <div class="form-group">
                     <label for="lobby-name">Lobby Name:</label>
@@ -61,6 +65,7 @@
                 </div>
                 <button type="submit" class="cta-button">Lobby erstellen</button>
             </form>
+        </div>
         </div>
     </div>
     <script src="script.js"></script>
