@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        if (weapons) {
+        if (weapons && Array.isArray(weapons)) {
             weapons.forEach(weapon => {
                 const option = document.createElement('option');
                 option.value = weapon.name;
