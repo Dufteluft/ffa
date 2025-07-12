@@ -1,5 +1,4 @@
-ESX = nil
-TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+ESX = exports["es_extended"]:getSharedObject()
 
 RegisterNetEvent('esx_ffa:openMenu')
 AddEventHandler('esx_ffa:openMenu', function(lobbies, playerStats, leaderboard, maps, weapons)

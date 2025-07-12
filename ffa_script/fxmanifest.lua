@@ -5,7 +5,10 @@ author 'Jules KI-Assistent'
 description 'FFA Script mit ESX Integration'
 version '1.0.0'
 
-shared_script 'shared/config.lua'
+shared_scripts {
+    'shared/config.lua',
+    'shared/lobby_config.lua'
+}
 
 client_scripts {
     '@es_extended/locale.lua', -- Falls ESX Sprachdateien verwendet
