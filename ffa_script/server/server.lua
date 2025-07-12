@@ -39,15 +39,19 @@ local function RemovePlayerFFALoadout(playerId)
         DebugPrint("Loadout Removal: Versuche FFA Loadout für Spieler " .. playerId .. " zu entfernen. Loadout: " .. json.encode(playerCurrentFFALoadout[playerId]))
         for _, weaponData in ipairs(playerCurrentFFALoadout[playerId]) do
             local currentAmount = exports.ox_inventory:Search('count', weaponData.name, playerId)
-            if currentAmount > 0 then
+            DebugPrint("Loadout Removal: ox_inventory:Search('count', '"..weaponData.name.."', "..playerId..") ergab: " .. tostring(currentAmount) .. " (Typ: " .. type(currentAmount) .. ")")
+
+            if currentAmount and type(currentAmount) == 'number' and currentAmount > 0 then
                 local success, removedCount = exports.ox_inventory:RemoveItem(playerId, weaponData.name, currentAmount)
                 if success and removedCount > 0 then
                     DebugPrint("Loadout Removal: Waffe " .. weaponData.name .. " (" .. removedCount .. " von " .. currentAmount .. ") von Spieler " .. playerId .. " entfernt.")
                 else
                     DebugPrint("Loadout Removal WARNING: Konnte Waffe " .. weaponData.name .. " nicht (vollständig) von Spieler " .. playerId .. " entfernen. Angefragt: " .. currentAmount .. ", Erfolgreich: " .. tostring(success) .. ", Anzahl entfernt: " .. tostring(removedCount))
                 end
-            else
-                DebugPrint("Loadout Removal INFO: Waffe " .. weaponData.name .. " nicht im Inventar von Spieler " .. playerId .. " gefunden (Anzahl 0).")
+            elseif not (currentAmount and type(currentAmount) == 'number') then
+                DebugPrint("Loadout Removal INFO: Waffe " .. weaponData.name .. " nicht als zählbare Menge im Inventar von Spieler " .. playerId .. " gefunden (Search ergab: " .. tostring(currentAmount) .. ").")
+            else -- currentAmount ist 0 oder weniger
+                DebugPrint("Loadout Removal INFO: Waffe " .. weaponData.name .. " nicht im Inventar von Spieler " .. playerId .. " gefunden (Anzahl 0 oder weniger).")
             end
         end
         playerCurrentFFALoadout[playerId] = nil
